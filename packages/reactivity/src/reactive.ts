@@ -13,7 +13,7 @@ export function reactive<T extends object>(target: T) {
         return true
       }
 
-      // 如果是一个对象的话 需要重新执行reactive函数
+      // 如果是一个对象的话 需要重新执行reactive函数, 监听嵌套的对象
       if (isObject(target[key])) {
         return reactive(target[key])
       }
@@ -33,5 +33,6 @@ export function reactive<T extends object>(target: T) {
 }
 
 export function isReactive(value: unknown): boolean {
+  // 如果value是一个reactive对象, 那么必定会触发proxy的getter
   return !!(value as any)[ReactiveFlags.IS_REACTIVE]
 }

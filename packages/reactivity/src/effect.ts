@@ -8,6 +8,7 @@ class ReactiveEffect {
   }
 
   run() {
+    // 依赖收集的函数内容
     activeEffect = this._fn
     this._fn()
   }
