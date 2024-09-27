@@ -44,6 +44,7 @@ export function toRaw<T>(observed: T): T {
   return raw ? toRaw(raw) : observed
 }
 
+// 去掉响应式
 export function markRaw<T extends object>(value: T) {
   // 如果没有SKIP属性, 并且value是可扩展对象的话，添加属性SKIP
   if (!hasOwn(value, ReactiveFlags.SKIP) && Object.isExtensible(value)) {
