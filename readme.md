@@ -1,7 +1,7 @@
 ### 实现响应式原理
 
 1. reactive函数
-*1.1* 利用proxy实现对象代理, 可在get时实现依赖收集(track), 在set时实现派发更新(trigger)。
+   _1.1_ 利用proxy实现对象代理, 可在get时实现依赖收集(track), 在set时实现派发更新(trigger)。
 
 ```js
 const proxy = new Proxy(target, {
@@ -32,7 +32,7 @@ const proxy = new Proxy(target, {
 ```
 
 2. effect函数
-*2.1* 可实现监听响应式对象变化，当响应式对象发生变化时，触发effect函数执行
+   _2.1_ 可实现监听响应式对象变化，当响应式对象发生变化时，触发effect函数执行
 
 ```js
 class ReactiveEffect {
@@ -49,4 +49,3 @@ class ReactiveEffect {
   }
 }
 ```
-

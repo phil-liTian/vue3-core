@@ -40,4 +40,22 @@ describe('reactivity/effect', () => {
     expect(dummy1).toBe(1)
     expect(dummy2).toBe(1)
   })
+
+  it('should observe nested property', () => {
+    let dummy
+    const counter = reactive({ nested: { num: 0 } })
+    effect(() => (dummy = counter.nested.num))
+    expect(dummy).toBe(0)
+    counter.nested.num++
+    expect(dummy).toBe(1)
+  })
+
+  it('should observe delete options', () => {
+    let dummy
+    const obj = reactive<{ props?: string }>({ props: 'value' })
+    effect(() => (dummy = obj.props))
+    expect(dummy).toBe('value')
+    delete obj.props
+    expect(dummy).toBe(undefined)
+  })
 })

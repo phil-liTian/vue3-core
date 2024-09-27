@@ -2,8 +2,11 @@
   "name": "vue3-core",
   "version": "1.0.0",
   "main": "rollup.config.js",
+  "type": "module",
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "lint": "eslint --cache .",
+    "format": "prettier --write ."
   },
   "keywords": [],
   "author": "",
@@ -11,5 +14,9 @@
   "description": "",
   "dependencies": {
     "vitest": "^2.1.1"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript-eslint": "^8.7.0"
   }
 }

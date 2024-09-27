@@ -13,6 +13,7 @@ export function track(target: object, key: unknown) {
     dep = new Set()
     depsMap.set(key, dep)
   }
+
   dep.add(activeEffect)
 }
 
@@ -21,5 +22,9 @@ export function trigger(target, key) {
   const depsMap = targetMap.get(target)
   if (!depsMap) return
   let deps = depsMap.get(key)
-  deps.forEach(effect => effect())
+  deps.forEach(effect => {
+    if (effect) {
+      effect()
+    }
+  })
 }
