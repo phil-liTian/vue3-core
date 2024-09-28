@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 import {
   isProxy,
   isReactive,
@@ -11,6 +11,7 @@ import {
   shallowReadonly,
   toRaw,
 } from '../src/reactive'
+import { effect } from '../src'
 
 describe('reactivity/reactive', () => {
   it('object', () => {
@@ -67,17 +68,6 @@ describe('reactivity/reactive', () => {
     expect('foo' in original).toBe(false)
   })
 
-  it('observing subtypes of InterableCollection(Map、Set)', () => {
-    // subTypes
-    class CustomMap extends Map {}
-    const cmap = reactive(new CustomMap())
-
-    expect(cmap).toBeInstanceOf(Map)
-    expect(isReactive(cmap)).toBe(true)
-    cmap.set('key', {})
-    // expect(isReactive(cmap.get('key'))).toBe(true)
-  })
-
   it('toRaw', () => {
     const original = { foo: 1 }
     const observed = reactive(original)
@@ -113,5 +103,72 @@ describe('reactivity/reactive', () => {
     expect(isProxy(observedSR)).toBe(true)
     expect(isReadonly(observedSR)).toBe(true)
     expect(isShallow(observedSR)).toBe(true)
+  })
+
+  it.skip('observing subtypes of InterableCollection(Map、Set)', () => {
+    // subTypes
+    class CustomMap extends Map {}
+    const cmap = reactive(new CustomMap())
+
+    expect(cmap).toBeInstanceOf(Map)
+    expect(isReactive(cmap)).toBe(true)
+    cmap.set('key', {})
+
+    expect(isReactive(cmap.get('key'))).toBe(true)
+
+    class CustomSet extends Set {}
+    const cset = reactive(new CustomSet())
+    expect(cset).toBeInstanceOf(Set)
+    expect(isReactive(cset)).toBe(true)
+    let dummy
+    effect(() => (dummy = cset.has('key')))
+    expect(dummy).toBe(false)
+    cset.add('key')
+    expect(dummy).toBe(true)
+  })
+
+  it.skip('observing subtypes of WeakCollections(WeakMap、WeakSet)', () => {
+    class CustomMap extends WeakMap {}
+    const cmap = reactive(new CustomMap())
+    expect(cmap).toBeInstanceOf(WeakMap)
+    expect(isReactive(cmap)).toBe(true)
+    const key = {}
+    cmap.set(key, {})
+    expect(isReactive(cmap.get(key))).toBe(true)
+
+    class CustomSet extends WeakSet {}
+    const cset = reactive(new CustomSet())
+    expect(cset).toBeInstanceOf(WeakSet)
+    expect(isReactive(cset)).toBe(true)
+    let dummy
+    effect(() => (dummy = cset.has('key')))
+    expect(dummy).toBe(false)
+    cset.add(key)
+    expect(dummy).toBe(true)
+  })
+
+  it('observed value should proxy mutations to original (object)', () => {
+    const original: any = { foo: 1 }
+    const observed = reactive(original)
+    // 新增的属性可以直接监听到
+    observed.bar = 2
+    expect(observed.bar).toBe(2)
+    expect(original.bar).toBe(2)
+
+    // 删除的属性也可直接监听
+    delete observed.foo
+    expect('foo' in observed).toBe(false)
+    expect('foo' in original).toBe(false)
+  })
+
+  it('original value change should reflect in observed value', () => {
+    const original: any = { foo: 1 }
+    const observed = reactive(original)
+    original.bar = 3
+    expect(observed.bar).toBe(3)
+    expect(original.bar).toBe(3)
+
+    delete observed.foo
+    expect('foo' in observed).toBe(false)
   })
 })

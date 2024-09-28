@@ -1,5 +1,5 @@
 import { isObject } from '@vue/shared'
-import { ReactiveFlags } from './constant'
+import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from './constant'
 import { track, trigger } from './dep'
 import { reactive, readonly } from './reactive'
 import { warn } from './warning'
@@ -15,7 +15,7 @@ class BaseReactiveHandler {
       isReadonly = this._isReadonly
     const res = Reflect.get(target, key, receiver)
     // 进行依赖收集
-    track(target, key)
+    track(target, TrackOpTypes.GET, key)
 
     if (key === ReactiveFlags.IS_REACTIVE) {
       return true
@@ -57,14 +57,15 @@ class MutableReactiveHandler extends BaseReactiveHandler {
   set(target, key, value, receiver) {
     const res = Reflect.set(target, key, value, receiver)
     // 当触发set的时候 派发更新
-    trigger(target, key)
+    trigger(target, TriggerOpTypes.SET, key)
     return res
   }
 
   deleteProperty(target: Record<string, unknown>, key: string) {
     const result = Reflect.deleteProperty(target, key)
+
     if (result) {
-      trigger(target, key)
+      trigger(target, TriggerOpTypes.DELETE, key)
     }
     return result
   }

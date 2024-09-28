@@ -12,11 +12,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "dependencies": {
-    "vitest": "^2.1.1"
-  },
   "devDependencies": {
     "prettier": "^3.3.3",
-    "typescript-eslint": "^8.7.0"
+    "typescript-eslint": "^8.7.0",
+    "vitest": "^2.1.1"
   }
 }

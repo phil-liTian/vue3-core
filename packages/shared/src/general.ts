@@ -7,6 +7,10 @@ export const objectToString: typeof Object.prototype.toString =
 
 export const toTypeString = (val: unknown): string => objectToString.call(val)
 
+export const isArray: typeof Array.isArray = Array.isArray
+export const isMap = (val: unknown): boolean =>
+  toTypeString(val) === '[object Map]'
+
 export const toRawType = (val: unknown): string =>
   toTypeString(val).slice(8, -1)
 

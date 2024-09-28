@@ -6,7 +6,15 @@ export enum ReactiveFlags {
   SKIP = '__v_skip',
 }
 
+// 触发依赖收集的type
+export enum TrackOpTypes {
+  GET = 'get',
+  ITERATE = 'iterate',
+}
+
+// 触发依赖的type
 export enum TriggerOpTypes {
   SET = 'set',
   ADD = 'add',
+  DELETE = 'delete',
 }

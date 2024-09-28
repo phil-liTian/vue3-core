@@ -1,51 +1,24 @@
 ### 实现响应式原理
 
-1. reactive函数
-   _1.1_ 利用proxy实现对象代理, 可在get时实现依赖收集(track), 在set时实现派发更新(trigger)。
+reactive函数
+
+- 使用的核心api: Proxy. 在get时实现依赖收集(track), 在set时实现派发更新(trigger)。
 
 ```js
-const proxy = new Proxy(target, {
-  get(target, key, receiver) {
-    const res = Reflect.get(target, key, receiver)
-    // 进行依赖收集
-    track(target, key)
-
-    if (key === ReactiveFlags.IS_REACTIVE) {
-      return true
-    }
-
-    // 如果是一个对象的话 需要重新执行reactive函数
-    if (isObject(target[key])) {
-      return reactive(target[key])
-    }
-
-    return res
-  },
-
-  set(target, key, value, receiver) {
-    const res = Reflect.set(target, key, value, receiver)
-    // 当触发set的时候 派发更新
-    trigger(target, key)
-    return res
-  },
-})
+1. reactive // 创建一个响应式对象, 如果响应式对象的值仍为一个对象, 递归调用reacitve方法。get时 收集effect, set时 触发依赖。
+2. shallowReactive // 创建一个响应式对象, 如果响应式对象的值仍为一个对象, 不再监听对象内部属性的变化. 可作为性能优化的点。
+3. isReactive // 判断一个对象是否为响应式对象。判断一个对象上是否有__v_isReactive, 触发getter则返回true 反之为false
+4. toRaw // 将一个响应式对象转换为普通对象。在getter中处理, 如果获取的是__v_raw, 则直接返回target, 不再代理当前对象。
+5. markRaw // 标记一个对象，使其永远不会转换为代理。标记__v_skip， 不再代理当前对象.
+6. readonly // 创建一个只读的对象。get时 不收集依赖，set时 不触发依赖。
+7. shallowReadonly // 创建一个只读的对象，如果对象内部属性仍为一个对象，则不会递归处理。
+8. isReadonly // 判断一个对象是否为只读对象。判断一个对象上是否有__v_isReadonly, 触发getter则返回true 反之为false
+9. isProxy // 判断是代理对象 很简单 只需要判断对象是否存在__v_raw即可
+10. isShallow // 判断当前对象是否是__v_isShallow 判断方法同isReadonly
+11. toReactive // 将一个普通对象转化成reactive对象
+12. toReadonly // 将一个普通对象转化成readonly对象
 ```
 
-2. effect函数
-   _2.1_ 可实现监听响应式对象变化，当响应式对象发生变化时，触发effect函数执行
+2. effect函数(很重要)
 
-```js
-class ReactiveEffect {
-  private _fn: any
-  constructor(fn) {
-    this._fn = fn
-    this.run()
-  }
-
-  run() {
-    // 依赖收集的函数内容
-    activeEffect = this._fn
-    this._fn()
-  }
-}
-```
+- 可实现监听响应式对象变化，当响应式对象发生变化时，触发effect函数执行

@@ -58,4 +58,13 @@ describe('reactivity/effect', () => {
     delete obj.props
     expect(dummy).toBe(undefined)
   })
+
+  it('should observe has operations', () => {
+    let dummy
+    const obj = reactive<{ props?: string }>({ props: 'value' })
+    effect(() => (dummy = 'props' in obj))
+    expect(dummy).toBe(true)
+    delete obj.props
+    // expect(dummy).toBe(false)
+  })
 })

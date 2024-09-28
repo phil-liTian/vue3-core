@@ -12,6 +12,9 @@ import {
 } from './collectionHandlers'
 import { def, hasOwn, isObject, toRawType } from '@vue/shared'
 export interface Target {
+  [ReactiveFlags.SKIP]?: boolean
+  [ReactiveFlags.IS_SHALLOW]?: boolean
+  [ReactiveFlags.IS_READONLY]?: boolean
   [ReactiveFlags.IS_REACTIVE]?: boolean
   [ReactiveFlags.RAW]?: any
 }
@@ -40,7 +43,7 @@ function getTargetType(value: Target) {
 }
 
 export function toRaw<T>(observed: T): T {
-  const raw = observed && (observed as any)[ReactiveFlags.RAW]
+  const raw = observed && (observed as Target)[ReactiveFlags.RAW]
   return raw ? toRaw(raw) : observed
 }
 
