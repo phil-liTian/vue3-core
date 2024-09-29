@@ -84,7 +84,12 @@ describe('reactivity/reactive', () => {
     expect(isReactive(obj.bar)).toBe(false)
   })
 
-  it('markeRaw should skip non-', () => {})
+  it('markRaw should skip non-extensible objects', () => {
+    const obj = Object.seal({ foo: 1 })
+    expect(() => markRaw(obj)).not.toThrowError()
+  })
+
+  // it('markeRaw should skip non-', () => {})
 
   it('isProxy', () => {
     const foo = {}
@@ -105,29 +110,7 @@ describe('reactivity/reactive', () => {
     expect(isShallow(observedSR)).toBe(true)
   })
 
-  it.skip('observing subtypes of InterableCollection(Map、Set)', () => {
-    // subTypes
-    class CustomMap extends Map {}
-    const cmap = reactive(new CustomMap())
-
-    expect(cmap).toBeInstanceOf(Map)
-    expect(isReactive(cmap)).toBe(true)
-    cmap.set('key', {})
-
-    expect(isReactive(cmap.get('key'))).toBe(true)
-
-    class CustomSet extends Set {}
-    const cset = reactive(new CustomSet())
-    expect(cset).toBeInstanceOf(Set)
-    expect(isReactive(cset)).toBe(true)
-    let dummy
-    effect(() => (dummy = cset.has('key')))
-    expect(dummy).toBe(false)
-    cset.add('key')
-    expect(dummy).toBe(true)
-  })
-
-  it.skip('observing subtypes of WeakCollections(WeakMap、WeakSet)', () => {
+  it('测试(weakSet、weakMap)', () => {
     class CustomMap extends WeakMap {}
     const cmap = reactive(new CustomMap())
     expect(cmap).toBeInstanceOf(WeakMap)
@@ -141,9 +124,30 @@ describe('reactivity/reactive', () => {
     expect(cset).toBeInstanceOf(WeakSet)
     expect(isReactive(cset)).toBe(true)
     let dummy
-    effect(() => (dummy = cset.has('key')))
+    effect(() => (dummy = cset.has(key)))
     expect(dummy).toBe(false)
     cset.add(key)
+    expect(dummy).toBe(true)
+  })
+
+  it('测试map、set', () => {
+    // subTypes
+    class CustomMap extends Map {}
+    const cmap = reactive(new CustomMap())
+
+    expect(cmap).toBeInstanceOf(Map)
+    expect(isReactive(cmap)).toBe(true)
+    cmap.set('key', {})
+
+    expect(isReactive(cmap.get('key'))).toBe(true)
+    class CustomSet extends Set {}
+    const cset = reactive(new CustomSet())
+    expect(cset).toBeInstanceOf(Set)
+    expect(isReactive(cset)).toBe(true)
+    let dummy
+    effect(() => (dummy = cset.has('key')))
+    expect(dummy).toBe(false)
+    cset.add('key')
     expect(dummy).toBe(true)
   })
 
@@ -170,5 +174,61 @@ describe('reactivity/reactive', () => {
 
     delete observed.foo
     expect('foo' in observed).toBe(false)
+  })
+
+  it('setting a property with an unobserved value should wrap it in reactive', () => {
+    const observed = reactive<{ foo?: string }>({})
+    const raw = {}
+    observed.foo = raw
+    expect(observed.foo).not.toBe(raw)
+    expect(isReactive(observed.foo)).toBe(true)
+  })
+
+  it('observing already observed value should return the same proxy', () => {
+    const original = { foo: 1 }
+    const observed = reactive(original)
+    const observed1 = reactive(observed)
+    expect(observed).toBe(observed1)
+  })
+
+  it('observing the same value multiple times should return the same proxy', () => {
+    const original = { foo: 1 }
+    const observed = reactive(original)
+    const observed2 = reactive(original)
+    expect(observed).toBe(observed2)
+  })
+
+  it('测试原始对象污染', () => {
+    const original: any = { foo: 1 }
+    const original2 = { bar: 2 }
+    const observed = reactive(original)
+    const observed2 = reactive(original2)
+    observed.bar = observed2
+    expect(observed.bar).toBe(observed2)
+    expect(original.bar).toBe(original2)
+  })
+
+  it.skip('原型链上的属性变化, 不再触发依赖', () => {
+    const observed = reactive({ foo: 1 })
+    const original = Object.create(observed)
+    let dummy
+    effect(() => {
+      dummy = original.foo
+    })
+    expect(dummy).toBe(1)
+    observed.foo = 2
+    expect(dummy).toBe(2)
+
+    original.foo = 3
+    expect(dummy).toBe(2)
+    // original.foo = 4
+    // expect(dummy).toBe(2)
+  })
+
+  it.skip('toRaw on object using reactive as prototype should work', () => {
+    const original = { foo: 1 }
+    const observed = reactive(original)
+    const inherted = Object.create(observed)
+    expect(toRaw(inherted)).toBe(inherted)
   })
 })

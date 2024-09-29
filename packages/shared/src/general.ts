@@ -11,6 +11,8 @@ export const isArray: typeof Array.isArray = Array.isArray
 export const isMap = (val: unknown): boolean =>
   toTypeString(val) === '[object Map]'
 
+export const isString = (val: unknown): boolean => typeof val === 'string'
+
 export const toRawType = (val: unknown): string =>
   toTypeString(val).slice(8, -1)
 
@@ -22,4 +24,10 @@ export const hasOwn = (val: object, key: string) =>
 // 给可拓展对象添加属性
 export const def = (obj: object, key: string, val: any): void => {
   Object.defineProperty(obj, key, { value: val })
+}
+
+export const isIntegerKey = (key: unknown): boolean => {
+  return (
+    isString(key) && key !== 'NAN' && '' + parseInt(key as string, 10) === key
+  )
 }

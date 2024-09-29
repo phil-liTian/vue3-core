@@ -19,6 +19,14 @@ export interface Target {
   [ReactiveFlags.RAW]?: any
 }
 
+export const reactiveMap: WeakMap<Target, any> = new WeakMap<Target, any>()
+export const shallowReactiveMap: WeakMap<Target, any> = new WeakMap<
+  Target,
+  any
+>()
+export const readonlyMap: WeakMap<Target, any> = new WeakMap()
+export const shallowReadonlyMap: WeakMap<Target, any> = new WeakMap()
+
 enum TargetType {
   // MarkRaw 可标记无需响应式的对象, 通过添加SKIP flag
   INVALID = 0,
@@ -65,6 +73,7 @@ export function reactive(target: object) {
     target,
     mutableHandlers,
     mutableCollectionHandlers,
+    reactiveMap,
   )
 }
 
@@ -73,8 +82,10 @@ export function shallowReactive(target: object) {
     target,
     shallowReactiveHandlers,
     shallowCollectionHandlers,
+    shallowReactiveMap,
   )
 }
+
 export function readonly<T extends object>(target: T): any
 
 export function readonly(target: object) {
@@ -82,6 +93,7 @@ export function readonly(target: object) {
     target,
     readonlyHandlers,
     readonlyCollectionHandlers,
+    readonlyMap,
   )
 }
 
@@ -90,6 +102,7 @@ export function shallowReadonly(target: object) {
     target,
     shallowReadonlyHandlers,
     readonlyCollectionHandlers,
+    shallowReadonlyMap,
   )
 }
 
@@ -121,7 +134,19 @@ function createReactiveObject(
   target: Target,
   baseHandlers: ProxyHandler<any>,
   collectionHandlers: ProxyHandler<any>,
+  proxyMap: WeakMap<Target, any>,
 ) {
+  // 如果多次给同一对象(即target相同) 添加响应式 则返回同一对象
+  const existingProxy = proxyMap.get(target)
+  if (existingProxy) {
+    return existingProxy
+  }
+
+  // 如果监听的就是一个reactive对象, 则直接返回该对象
+  if (target[ReactiveFlags.RAW] && target[ReactiveFlags.IS_REACTIVE]) {
+    return target
+  }
+
   const targetType = getTargetType(target)
   // 标记INVALID后无需响应式
   if (targetType === TargetType.INVALID) {
@@ -131,5 +156,7 @@ function createReactiveObject(
     target,
     targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers,
   )
+
+  proxyMap.set(target, proxy)
   return proxy
 }

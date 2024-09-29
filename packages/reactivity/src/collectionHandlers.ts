@@ -1,3 +1,4 @@
+import { hasOwn } from '@vue/shared'
 import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from './constant'
 import { ITERATE_KEY, track, trigger } from './dep'
 import { Target, toRaw, toReactive, toReadonly } from './reactive'
@@ -42,7 +43,6 @@ function set(this, key, value) {
   const target = toRaw(this)
 
   target.set(key, value)
-
   trigger(target, TriggerOpTypes.SET, value)
 
   return this
@@ -51,15 +51,16 @@ function set(this, key, value) {
 function has(this, key) {
   const target = this[ReactiveFlags.RAW]
   const targetRaw = toRaw(target)
+  track(targetRaw, TrackOpTypes.HAS, key)
+
   return targetRaw.has(key)
 }
 
-function add(this, key) {
+function add(this, value) {
   const target = toRaw(this)
   const targetRaw = toRaw(target)
-  targetRaw.add(key)
-
-  trigger(target, TriggerOpTypes.ADD, key)
+  targetRaw.add(value)
+  trigger(target, TriggerOpTypes.ADD, value)
 
   return this
 }
@@ -72,13 +73,6 @@ function createInstrucmentations() {
     set,
     has,
     add,
-
-    // [Symbol.iterator](this: MapTypes) {
-    //   const target = this[ReactiveFlags.RAW]
-    //   const rawTarget = toRaw(target)
-
-    //   track(rawTarget, TrackOpTypes.ITERATE, ITERATE_KEY)
-    // },
   }
 
   const iteratorMethods = ['keys', 'values', 'entries', Symbol.iterator]
@@ -103,7 +97,14 @@ const createInstrumentationGetter = (target, key, receiver) => {
     return target
   }
 
-  return Reflect.get(mutableInstrucmentations, key, receiver)
+  return Reflect.get(
+    // hasOwn(mutableInstrucmentations, key) && key in target
+    //   ? mutableInstrucmentations
+    //   : target,
+    mutableInstrucmentations,
+    key,
+    receiver,
+  )
 }
 
 export const mutableCollectionHandlers: ProxyHandler<any> = {

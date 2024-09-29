@@ -1,4 +1,4 @@
-import { isArray, isMap } from '@vue/shared'
+import { isArray, isIntegerKey, isMap } from '@vue/shared'
 import { TrackOpTypes, TriggerOpTypes } from './constant'
 import { activeEffect, effect } from './effect'
 
@@ -6,6 +6,12 @@ export const targetMap = new WeakMap()
 
 export const MAP_KEY_ITERATE_KEY = Symbol('Map keys iterate')
 export const ITERATE_KEY = Symbol('object iterate')
+export const ARRAY_ITERATE_KEY = Symbol('Array Iterate')
+
+export class Link {
+  constructor(dep: Dep) {}
+}
+
 export class Dep {
   private deps = new Set()
 
@@ -20,6 +26,8 @@ export class Dep {
       }
     })
   }
+
+  notify() {}
 }
 
 export function track(target: object, type: TrackOpTypes, key: unknown) {
@@ -51,9 +59,22 @@ export function trigger(target, type: TriggerOpTypes, key) {
   if (!depsMap) return
   let dep = depsMap.get(key)
 
-  run(dep)
-
   const targetIsArray = isArray(target)
+  // 操作数组的下标触发trigger
+  const isArrayIndex = targetIsArray && isIntegerKey(key)
+
+  if (isArray(target) && key === 'length') {
+    //
+  } else {
+    // ADD | SET | DELETE
+
+    run(dep)
+
+    // 如果此处通过数组下标 设置元素内容, 则通过ARRAY_ITERATE_KEY来派发依赖更新
+    if (isArrayIndex) {
+      run(depsMap.get(ARRAY_ITERATE_KEY))
+    }
+  }
 
   switch (type) {
     case TriggerOpTypes.ADD:
@@ -64,7 +85,6 @@ export function trigger(target, type: TriggerOpTypes, key) {
           run(depsMap.get(MAP_KEY_ITERATE_KEY))
         }
       }
-
       break
     case TriggerOpTypes.SET:
       break
