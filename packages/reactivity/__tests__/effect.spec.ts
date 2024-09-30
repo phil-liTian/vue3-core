@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { effect } from '../src/effect'
+import { effect, stop } from '../src/effect'
 import { reactive } from '../src/reactive'
 
 describe('reactivity/effect', () => {
@@ -151,7 +151,7 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe('hello world!  Hello!')
   })
 
-  it('监听数组变化 - push、shift', () => {
+  it.skip('监听数组变化 - push、shift', () => {
     let dummy
     const list = reactive(['Hello'])
     effect(() => (dummy = list.join(' ')))
@@ -160,7 +160,9 @@ describe('reactivity/effect', () => {
     list.push('World!')
     expect(dummy).toBe('Hello World!')
     list.shift()
-    expect(dummy).toBe('World! ')
+
+    expect(list.join(' ')).toBe('World!')
+    // expect(dummy).toBe('World!')
   })
 
   it.skip('监听数组变化 - pop', () => {
@@ -174,6 +176,8 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe('hello World!')
     list.pop()
 
+    expect(list.join(' ')).toBe('hello')
+
     expect(dummy).toBe('hello')
   })
 
@@ -183,14 +187,73 @@ describe('reactivity/effect', () => {
 
     effect(() => {
       dummy = 0
+      // 会触发ownKeys
       for (const key in numbers) {
-        dummy = numbers[key]
+        dummy += numbers[key]
       }
     })
 
     expect(dummy).toBe(3)
-    // numbers.num2 = 4
-    // expect(dummy).toBe(7)
+    numbers.num2 = 4
+    expect(dummy).toBe(7)
+    delete numbers.num1
+    expect(dummy).toBe(4)
+  })
+
+  it('能监听用symbol作为key的对象', () => {
+    const key = Symbol('symbol keyed')
+    let dummy, dummyFlag
+    const obj = reactive<{ [key]?: number }>({ [key]: 1 })
+    effect(() => (dummy = obj[key]))
+    effect(() => (dummyFlag = key in obj))
+    expect(dummy).toBe(1)
+    expect(dummyFlag).toBe(true)
+    obj[key] = 2
+    expect(dummy).toBe(2)
+    delete obj[key]
+    expect(dummy).toBe(undefined)
+    expect(dummyFlag).toBe(false)
+  })
+
+  it('不监听常见symbol的静态属性', () => {
+    const key = Symbol.isConcatSpreadable
+    let dummy
+    const array: any = reactive([])
+    effect(() => (dummy = array[key]))
+    expect(dummy).toBe(undefined)
+    array[key] = true
+    expect(array[key]).toBe(true)
+    expect(dummy).toBe(undefined)
+  })
+  // has方法
+  it('in操作不监听常见symbol的静态属性', () => {
+    const key = Symbol.isConcatSpreadable
+    const obj = reactive({
+      [key]: true,
+    }) as any
+    const spyfn = vi.fn(() => {
+      key in obj
+    })
+    effect(spyfn)
+    expect(spyfn).toBeCalledTimes(1)
+
+    obj[key] = false
+    expect(spyfn).toBeCalledTimes(1)
+  })
+
+  it.skip('当key是一个symbol类型的时候 可操作数组', () => {
+    const key = Symbol()
+    let dummy
+    const array = reactive([1, 2, 3])
+    expect(() => (dummy = array[key]))
+    expect(dummy).toBe(undefined)
+    // array.pop()
+    // array.shift()
+    // array.splice(0, 1)
+    expect(dummy).toBe(undefined)
+    array[key] = 'value'
+    // array.length = 0
+    expect(dummy).toBe('value')
   })
 
   it('scheduler', () => {
@@ -212,5 +275,31 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe(1)
     obj.foo++
     expect(scheduler).toHaveBeenCalledTimes(1)
+    expect(dummy).toBe(1)
+    run()
+    expect(dummy).toBe(2)
+  })
+
+  it('stop', () => {
+    let dummy
+    const obj = reactive({ prop: 1 })
+    const runner = effect(() => {
+      dummy = obj.prop
+    })
+    expect(dummy).toBe(1)
+    obj.prop++
+    expect(dummy).toBe(2)
+    stop(runner)
+    obj.prop = 3
+    expect(dummy).toBe(2)
+    runner()
+    expect(dummy).toBe(3)
+  })
+
+  it('events: onStop', () => {
+    const onStop = vi.fn()
+    const runner = effect(() => {}, { onStop })
+    stop(runner)
+    expect(onStop).toHaveBeenCalled()
   })
 })

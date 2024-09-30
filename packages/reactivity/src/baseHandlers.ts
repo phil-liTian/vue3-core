@@ -1,9 +1,15 @@
-import { hasOwn, isArray, isObject } from '@vue/shared'
+import { hasOwn, isArray, isObject, isSymbol } from '@vue/shared'
 import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from './constant'
-import { track, trigger } from './dep'
+import { ITERATE_KEY, track, trigger } from './dep'
 import { isReadonly, isShallow, reactive, readonly, toRaw } from './reactive'
 import { warn } from './warning'
 import { arrayInstrumentations } from './arrayInstrumentations'
+
+const builtInSymbols = new Set(
+  Object.getOwnPropertyNames(Symbol).map(
+    key => Symbol[key as keyof SymbolConstructor],
+  ),
+)
 
 class BaseReactiveHandler {
   constructor(
@@ -14,10 +20,6 @@ class BaseReactiveHandler {
   get(target, key, receiver) {
     const isShallow = this._isShallow,
       isReadonly = this._isReadonly
-
-    const res = Reflect.get(target, key, receiver)
-    // 进行依赖收集
-    track(target, TrackOpTypes.GET, key)
 
     if (key === ReactiveFlags.IS_REACTIVE) {
       return true
@@ -41,6 +43,16 @@ class BaseReactiveHandler {
     if (targetIsArray && (fn = arrayInstrumentations[key])) {
       return fn
     }
+
+    const res = Reflect.get(target, key, receiver)
+
+    // 不监听Symbol的静态属性
+    if (isSymbol(key) && builtInSymbols.has(key)) {
+      return res
+    }
+
+    // 进行依赖收集
+    track(target, TrackOpTypes.GET, key)
 
     // 响应式对象只处理到第一层
     if (isShallow) {
@@ -68,12 +80,12 @@ class MutableReactiveHandler extends BaseReactiveHandler {
       value = toRaw(value)
     }
 
-    const res = Reflect.set(target, key, value, receiver)
-
     // 判断是否是已经存在的属性
     const hadKey = isArray(target)
       ? Number[key] < target.length
       : hasOwn(target, key)
+
+    const res = Reflect.set(target, key, value, receiver)
 
     if (hadKey) {
       // update
@@ -99,15 +111,19 @@ class MutableReactiveHandler extends BaseReactiveHandler {
   // in 操作符 会触发has操作，处理should observe has operations
   has(target, key) {
     const res = Reflect.has(target, key)
-    track(target, TrackOpTypes.HAS, key)
+    // symbol 和 symbol原型上的方法 都不会触发当前依赖收集
+    if (!isSymbol(key) || !builtInSymbols.has(key)) {
+      track(target, TrackOpTypes.HAS, key)
+    }
     return res
   }
 
-  // ownKeys(target) {
-  //   console.log('target', target)
+  // for ... in 操作符会触发 ownKeys。此处收集ITERATE_KEY, 当触发set时, 会匹配到TriggerOpTypes.ADD, trigger ITERATE_KEY
+  ownKeys(target) {
+    track(target, TrackOpTypes.ITERATE, ITERATE_KEY)
 
-  //   return Reflect.ownKeys(target)
-  // }
+    return Reflect.ownKeys(target)
+  }
 }
 
 class ReadonlyReactiveHandler extends BaseReactiveHandler {

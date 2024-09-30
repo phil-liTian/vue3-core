@@ -1,3 +1,4 @@
+export const NOOP = (): void => {}
 // 判断是否是对象类型
 export const isObject = (val: unknown): boolean =>
   val !== null && typeof val === 'object'
@@ -12,6 +13,10 @@ export const isMap = (val: unknown): boolean =>
   toTypeString(val) === '[object Map]'
 
 export const isString = (val: unknown): boolean => typeof val === 'string'
+
+export const isSymbol = (val: unknown): boolean => typeof val === 'symbol'
+
+export const isFunction = (val: unknown): boolean => typeof val === 'function'
 
 export const toRawType = (val: unknown): string =>
   toTypeString(val).slice(8, -1)
@@ -31,3 +36,5 @@ export const isIntegerKey = (key: unknown): boolean => {
     isString(key) && key !== 'NAN' && '' + parseInt(key as string, 10) === key
   )
 }
+
+export const extend: typeof Object.assign = Object.assign
