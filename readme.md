@@ -40,5 +40,9 @@
 2. isRef 在RefImpl类中添加IS_REF标识。
 3. unRef 当传入的参数为ref对象时，返回ref对象内部的value值，否则返回本身。
 4. toRef 将一个对象转化成响应式对象, 如果带转化对象本身是reactive, 则这个对象与原本的对象变化保持一致。参数可以是对象ObjectRefImpl保持原来对象的响应式 或者函数 GetterRefImpl 不可编辑
-5. toRefs 与toRef不同点在于 一次可处理对象中的多个属性
+5. toRefs 与 toRef不同点在于 一次可处理对象中的多个属性
+6. toValue 将function或者computed、ref转化成一个值。
+7. shallowRef 如果需要深度监听，在转化成reactive类型, 否则直接使用sourceValue进行监听
+8. triggerRef 对于shallowRef对象, 如果值发生变化，不会自动触发依赖。这时候可以调用triggerRef手动触发依赖。触发当前ref身上dep。
+9. customRef 自定义ref。通过向外抛出当前ref身上的dep, 实现自定义依赖收集及派发更新过程。vueuse中refAutoReset就是基于当前api实现
 ```

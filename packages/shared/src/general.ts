@@ -16,7 +16,9 @@ export const isString = (val: unknown): boolean => typeof val === 'string'
 
 export const isSymbol = (val: unknown): boolean => typeof val === 'symbol'
 
-export const isFunction = (val: unknown): boolean => typeof val === 'function'
+// val is Function 类型谓词, 可更清晰地表达代码中的逻辑，更容易理解变量的类型在不同情况下的变化
+export const isFunction = (val: unknown): val is Function =>
+  typeof val === 'function'
 
 export const toRawType = (val: unknown): string =>
   toTypeString(val).slice(8, -1)
@@ -38,3 +40,6 @@ export const isIntegerKey = (key: unknown): boolean => {
 }
 
 export const extend: typeof Object.assign = Object.assign
+
+export const hasChanged = (value: any, oldValue: any): boolean =>
+  !Object.is(value, oldValue)

@@ -23,6 +23,10 @@ export {
   toRef,
   unRef,
   toRefs,
+  toValue,
+  shallowRef,
+  triggerRef,
+  customRef,
 } from './ref'
 
 export { effect } from './effect'

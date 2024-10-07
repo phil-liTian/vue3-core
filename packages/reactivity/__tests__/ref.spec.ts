@@ -1,6 +1,23 @@
 import { describe, expect, it, vi } from 'vitest'
-import { isRef, ref, toRef, toRefs, unRef } from '../src/ref'
-import { effect, isReadonly, reactive } from '../src'
+import {
+  customRef,
+  isRef,
+  ref,
+  shallowRef,
+  toRef,
+  toRefs,
+  triggerRef,
+  unRef,
+} from '../src/ref'
+import {
+  computed,
+  effect,
+  isReactive,
+  isReadonly,
+  isShallow,
+  reactive,
+  toValue,
+} from '../src'
 import { isArray } from '@vue/shared'
 
 describe('reactivity/ref', () => {
@@ -65,6 +82,29 @@ describe('reactivity/ref', () => {
 
     // b.value = 5
     // expect(dummy).toBe(5)
+  })
+
+  it('shallowRef', () => {
+    const sRef = shallowRef({ a: 1 })
+    expect(isReactive(sRef)).toBe(false)
+    let dummy
+    effect(() => {
+      dummy = sRef.value.a
+    })
+
+    expect(dummy).toBe(1)
+
+    sRef.value = { a: 2 }
+    expect(isReactive(sRef.value)).toBe(false)
+    expect(dummy).toBe(2)
+
+    sRef.value.a = 3
+    expect(dummy).toBe(2)
+
+    triggerRef(sRef)
+    expect(dummy).toBe(3)
+
+    expect(isShallow(sRef)).toBe(true)
   })
 
   it('isRef', () => {
@@ -163,5 +203,66 @@ describe('reactivity/ref', () => {
 
     refs[2].value = 6
     expect(arr).toEqual([1, 5, 6])
+  })
+
+  it('toValue', () => {
+    const a = ref(1)
+    const b = computed(() => a.value + 1)
+
+    const c = () => a.value + 2
+    const d = 4
+
+    expect(toValue(a)).toBe(1)
+    expect(toValue(b)).toBe(2)
+    expect(toValue(c)).toBe(3)
+    expect(toValue(d)).toBe(4)
+  })
+
+  it('customRef', () => {
+    let value = 1
+
+    let _trigger: () => void
+    const custom = customRef((track, trigger) => ({
+      get() {
+        track()
+        return value
+      },
+      set(newValue: number) {
+        value = newValue + 1
+        _trigger = trigger
+        return true
+      },
+    }))
+
+    expect(isRef(custom)).toBe(true)
+    let dummy
+    effect(() => (dummy = custom.value))
+
+    expect(dummy).toBe(1)
+    custom.value = 2
+    expect(dummy).toBe(1)
+
+    _trigger!()
+    expect(dummy).toBe(3)
+  })
+
+  it('should not trigger when setting value to same proxy', () => {
+    const obj = reactive({ foo: 1 })
+
+    const a = ref(obj)
+    const spy1 = vi.fn(() => a.value)
+    effect(spy1)
+
+    expect(spy1).toHaveBeenCalledTimes(1)
+    a.value = obj
+    expect(spy1).toHaveBeenCalledTimes(1)
+
+    const b = shallowRef(obj)
+    const spy2 = vi.fn(() => b.value)
+    effect(spy2)
+
+    expect(spy2).toHaveBeenCalledTimes(1)
+    b.value = obj
+    expect(spy2).toHaveBeenCalledTimes(1)
   })
 })
