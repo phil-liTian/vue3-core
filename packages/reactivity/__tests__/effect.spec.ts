@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effect, stop } from '../src/effect'
-import { reactive } from '../src/reactive'
+import { reactive, toRaw } from '../src/reactive'
 
 describe('reactivity/effect', () => {
   it('should run the passed function once(wrapped by effect)', () => {
@@ -301,5 +301,110 @@ describe('reactivity/effect', () => {
     const runner = effect(() => {}, { onStop })
     stop(runner)
     expect(onStop).toHaveBeenCalled()
+  })
+
+  it('should observe function valued property', () => {
+    let dummy
+    const oldFunc = () => {}
+    const newFunc = () => {}
+    const obj = reactive({ prop: oldFunc })
+    effect(() => (dummy = obj.prop))
+    expect(dummy).toBe(oldFunc)
+    obj.prop = newFunc
+    expect(dummy).toBe(newFunc)
+  })
+
+  it('should observe getter rely on this', () => {
+    const obj = reactive({
+      a: 1,
+      get b() {
+        return this.a
+      },
+    })
+
+    let dummy
+    effect(() => (dummy = obj.b))
+    expect(dummy).toBe(1)
+
+    obj.a = 2
+    expect(dummy).toBe(2)
+  })
+
+  it('should observe methods rely on this', () => {
+    const obj = reactive({
+      a: 1,
+      b() {
+        return this.a
+      },
+    })
+    let dummy
+    effect(() => (dummy = obj.b()))
+    expect(dummy).toBe(1)
+    obj.a = 2
+    expect(dummy).toBe(2)
+  })
+
+  it('监听的值不改变时, 不触发fn', () => {
+    let hasDummy, getDummy
+    const obj = reactive({ prop: 'value' })
+    const getSpy = vi.fn(() => {
+      getDummy = obj.prop
+    })
+
+    const hasSpy = vi.fn(() => {
+      hasDummy = 'prop' in obj
+    })
+
+    effect(getSpy)
+    effect(hasSpy)
+
+    expect(getSpy).toHaveBeenCalledTimes(1)
+    expect(hasSpy).toHaveBeenCalledTimes(1)
+
+    obj.prop = 'value'
+    expect(getSpy).toHaveBeenCalledTimes(1)
+    expect(hasSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('非响应式对象发生变化, 不触发更新', () => {
+    const obj = reactive<{ props?: string; key?: string }>({})
+    let dummy, dummy1
+    // const fn = vi.fn(() => (dummy = toRaw(obj).props))
+    effect(() => (dummy = toRaw(obj).props))
+    expect(dummy).toBe(undefined)
+    obj.props = 'value'
+    expect(dummy).toBe(undefined)
+
+    effect(() => (dummy1 = obj.key))
+    toRaw(obj).key = 'value'
+    expect(dummy1).toBe(undefined)
+  })
+
+  it('effect每次都返回一个新函数', () => {
+    function greet() {
+      return 'hello'
+    }
+    const effect1 = effect(greet)
+    const effect2 = effect(greet)
+    expect(typeof effect1).toBe('function')
+    expect(typeof effect2).toBe('function')
+    expect(effect1).not.toBe(effect2)
+  })
+
+  it('should pause/resume effect & 执行resume立即执行一次trigger', () => {
+    const obj = reactive({ foo: 1 })
+    const fnSpy = vi.fn(() => obj.foo)
+    const runner = effect(fnSpy)
+    expect(fnSpy).toHaveBeenCalledTimes(1)
+
+    runner.effect.pause()
+    obj.foo++
+    expect(fnSpy).toHaveBeenCalledTimes(1)
+    expect(obj.foo).toBe(2)
+
+    runner.effect.resume()
+    expect(fnSpy).toHaveBeenCalledTimes(2)
+    obj.foo++
+    expect(fnSpy).toHaveBeenCalledTimes(3)
   })
 })

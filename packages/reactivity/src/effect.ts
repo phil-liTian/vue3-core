@@ -1,12 +1,15 @@
-import { extend } from '@vue/shared'
+import { extend, hasChanged } from '@vue/shared'
 import { ReactiveFlags } from './constant'
 import { Dep, Link } from './dep'
+import { ComputedRefImpl } from './computed'
 
 export let activeEffect
 
 export enum EffectFlags {
   ACTIVE = 1 << 0,
   RUNNING = 1 << 1,
+  DIRTY = 1 << 4, // 标识计算属性是否需要重新计算
+  PAUSE = 1 << 6, // 标识是否暂停监听
 }
 
 export interface ReactiveEffectOptions {
@@ -43,16 +46,16 @@ export class ReactiveEffect {
   }
 
   stop() {
-    // this.deps.forEach(dep => dep.delete(this))
     for (let link = this.deps; link; link = link.nextDep) {
       link.dep.cleanup()
     }
     this.onStop && this.onStop()
-    // this.deps = undefined
   }
 
   trigger() {
-    if (this.scheduler) {
+    if (this.flags & EffectFlags.PAUSE) {
+      // 暂停状态 不再触发更新
+    } else if (this.scheduler) {
       this.scheduler()
     } else {
       this.run()
@@ -62,6 +65,20 @@ export class ReactiveEffect {
   // 通知需要更新batchedSub
   notify() {
     batch(this)
+  }
+
+  pause() {
+    this.flags |= EffectFlags.PAUSE
+  }
+
+  resume() {
+    if (this.flags & EffectFlags.PAUSE) {
+      // 取消暂停状态
+      this.flags &= ~EffectFlags.PAUSE
+
+      // 取消之后立即执行一次
+      this.trigger()
+    }
   }
 }
 
@@ -113,4 +130,20 @@ export function endBatch() {
   }
 
   // if (error) throw error
+}
+
+// 处理computed
+export function refreshComputed(computed: ComputedRefImpl) {
+  // 不需要重新计算
+  if (!(computed.flags & EffectFlags.DIRTY)) {
+    return
+  }
+
+  // 清除DIRTY标志位的目的
+  // computed.flags &= ~EffectFlags.DIRTY
+
+  const value = computed.fn(computed._value)
+  if (hasChanged(value, computed._value)) {
+    computed._value = value
+  }
 }

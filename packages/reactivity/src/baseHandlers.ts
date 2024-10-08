@@ -1,4 +1,4 @@
-import { hasOwn, isArray, isObject, isSymbol } from '@vue/shared'
+import { hasChanged, hasOwn, isArray, isObject, isSymbol } from '@vue/shared'
 import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from './constant'
 import { ITERATE_KEY, track, trigger } from './dep'
 import { isReadonly, isShallow, reactive, readonly, toRaw } from './reactive'
@@ -75,6 +75,8 @@ class MutableReactiveHandler extends BaseReactiveHandler {
   }
 
   set(target, key, value, receiver) {
+    let oldValue = target[key]
+
     if (!isShallow(value) && !isReadonly(value)) {
       // set的时候 如果set的是一个reactive对象, 则将这个reactive对象转化成原始类型, 因为reactive对象默认是递归都具有响应式的, 里面对象无需再包装
       value = toRaw(value)
@@ -87,12 +89,12 @@ class MutableReactiveHandler extends BaseReactiveHandler {
 
     const res = Reflect.set(target, key, value, receiver)
 
-    if (hadKey) {
-      // update
-      trigger(target, TriggerOpTypes.SET, key)
-    } else {
+    if (!hadKey) {
       // 新增属性
       trigger(target, TriggerOpTypes.ADD, key)
+    } else if (hasChanged(oldValue, value)) {
+      // update(值发生改变时才需要更新)
+      trigger(target, TriggerOpTypes.SET, key)
     }
 
     return res

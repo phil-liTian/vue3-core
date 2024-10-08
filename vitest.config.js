@@ -5,7 +5,6 @@ export default defineConfig({
     __DEV__: true
   },
 
-
   test: {
     globals: true,
     // 添加一个配置文件，用于在测试开始前执行一些初始化操作

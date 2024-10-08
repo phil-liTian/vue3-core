@@ -11,4 +11,13 @@ describe('watch', () => {
     source.value++
     expect(dummy).toBe(1)
   })
+
+  it('with callback', () => {
+    let dummy
+    const source = ref(0)
+    watch(source, () => (dummy = source.value))
+    expect(dummy).toBe(undefined)
+    source.value++
+    expect(dummy).toBe(1)
+  })
 })

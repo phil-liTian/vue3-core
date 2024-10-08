@@ -1,15 +1,63 @@
+import { isFunction } from '@vue/shared'
+import { ReactiveFlags } from './constant'
+import { Dep } from './dep'
+import { EffectFlags, refreshComputed } from './effect'
+
 export type ComputedGetter<T> = (oldValue?: T) => T
+export type ComputedSetter<T> = (newValue: T) => void
+
+export type WritableComputedOptions<T> = {
+  get: ComputedGetter<T>
+  set: ComputedSetter<T>
+}
 
 export class ComputedRefImpl<T = any> {
+  _value: any = undefined
   // computed也是一个ref类型
   readonly __v_isRef = true
-  constructor(public fn: ComputedGetter<T>) {}
+
+  readonly dep: Dep = new Dep(this)
+
+  flags: EffectFlags = EffectFlags.DIRTY
+  constructor(
+    public fn: ComputedGetter<T>,
+    private readonly setter: ComputedSetter<T> | undefined,
+  ) {
+    this[ReactiveFlags.IS_READONLY] = !setter
+  }
+
+  notify() {
+    console.log('notify')
+  }
 
   get value() {
-    return this.fn()
+    this.dep.track()
+    // 处理computed中逻辑, 在getter时 才会调用fn, lazyComputed
+    refreshComputed(this)
+    return this._value
+  }
+
+  set value(newValue) {
+    if (this.setter) {
+      this.setter(newValue)
+    } else {
+    }
   }
 }
 
-export function computed<T>(getter) {
-  return new ComputedRefImpl(getter)
+export function computed<T>(
+  getterOrOptions: ComputedGetter<T> | WritableComputedOptions<T>,
+) {
+  let getter: ComputedGetter<T>
+  let setter: ComputedSetter<T> | undefined
+  if (isFunction(getterOrOptions)) {
+    getter = getterOrOptions
+  } else {
+    getter = getterOrOptions.get
+    setter = getterOrOptions.set
+  }
+
+  const cRef = new ComputedRefImpl(getter, setter)
+
+  return cRef
 }
