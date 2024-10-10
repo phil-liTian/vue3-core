@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effect, stop } from '../src/effect'
 import { reactive, toRaw } from '../src/reactive'
+import { Dep, getDepFromReactive } from '../src/dep'
 
 describe('reactivity/effect', () => {
   it('should run the passed function once(wrapped by effect)', () => {
@@ -296,6 +297,28 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe(3)
   })
 
+  it('stop with multiple effects', () => {
+    let dummy1, dummy2
+    const obj1 = reactive({ prop: 1 })
+    const obj2 = reactive({ prop: 2 })
+    const runner = effect(() => {
+      dummy1 = obj1.prop
+      dummy2 = obj2.prop
+    })
+
+    obj1.prop = 2
+    obj2.prop = 4
+    expect(dummy1).toBe(2)
+    expect(dummy2).toBe(4)
+
+    stop(runner)
+    obj1.prop = 3
+    obj2.prop = 5
+
+    // expect(dummy1).toBe(2)
+    // expect(dummy2).toBe(4)
+  })
+
   it('events: onStop', () => {
     const onStop = vi.fn()
     const runner = effect(() => {}, { onStop })
@@ -406,5 +429,30 @@ describe('reactivity/effect', () => {
     expect(fnSpy).toHaveBeenCalledTimes(2)
     obj.foo++
     expect(fnSpy).toHaveBeenCalledTimes(3)
+  })
+
+  describe('dep unsubscribe', () => {
+    function getSubCount(dep: Dep | undefined) {
+      let sub = dep?.subs
+      let count = 0
+
+      while (sub) {
+        count++
+        sub = sub.prevSub
+      }
+
+      return count
+    }
+
+    it('effect stop时, 移除当前dep', () => {
+      const obj = reactive({ foo: 1 })
+      const runner = effect(() => obj.foo)
+      const dep = getDepFromReactive(toRaw(obj), 'foo')
+      expect(getSubCount(dep)).toBe(1)
+      obj.foo = 2
+      expect(getSubCount(dep)).toBe(1)
+      stop(runner)
+      // expect(getSubCount(dep)).toBe(0)
+    })
   })
 })

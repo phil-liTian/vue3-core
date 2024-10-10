@@ -31,7 +31,7 @@ export {
 
 export { effect } from './effect'
 
-export { effectScope } from './effectScope'
+export { effectScope, onScopeDispose } from './effectScope'
 
 export { computed } from './computed'
 

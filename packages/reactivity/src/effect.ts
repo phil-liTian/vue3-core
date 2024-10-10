@@ -2,6 +2,7 @@ import { extend, hasChanged } from '@vue/shared'
 import { ReactiveFlags } from './constant'
 import { Dep, Link } from './dep'
 import { ComputedRefImpl } from './computed'
+import { activeEffectScope } from './effectScope'
 
 export let activeEffect
 
@@ -19,7 +20,8 @@ export interface ReactiveEffectOptions {
 
 export interface Subscriber {
   deps?: Link
-  flags?: EffectFlags
+  flags: EffectFlags
+  notify(): true | void
 }
 
 export interface ReactiveEffectRunner<T> {
@@ -34,7 +36,14 @@ export class ReactiveEffect {
   flags: EffectFlags = EffectFlags.ACTIVE
   // 用作反向收集dep, 实现stop方法
   deps?: Link = undefined
+
+  // 链表尾部
+  depsTail?: Link = undefined
   constructor(fn) {
+    if (activeEffectScope && activeEffectScope.active) {
+      activeEffectScope.effects.push(this)
+    }
+
     this._fn = fn
   }
 
@@ -49,6 +58,7 @@ export class ReactiveEffect {
     for (let link = this.deps; link; link = link.nextDep) {
       link.dep.cleanup()
     }
+
     this.onStop && this.onStop()
   }
 

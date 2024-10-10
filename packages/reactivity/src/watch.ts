@@ -2,12 +2,24 @@ import { EMPTY_OBJ, isFunction, NOOP } from '@vue/shared'
 import { ReactiveEffect } from './effect'
 import { isReactive } from './reactive'
 
+export enum WatchErrorCodes {
+  WATCH_GETTER = 2,
+  WATCH_CALLBACK,
+  WATCH_CLEANUP,
+}
+
 export type WatchSource<T> = () => T
 
-export interface WatchOptions<Immediate extends boolean> {
+export interface WatchOptions<Immediate = boolean> {
   immediate?: Immediate
 
   deep?: boolean | number
+
+  call?: (
+    fn: Function | Function[],
+    type: WatchErrorCodes,
+    args?: unknown[],
+  ) => void
 }
 
 export type WatchStopHandle = () => void
@@ -23,6 +35,8 @@ export function watch<T>(
   cb?: any,
   options: WatchOptions<boolean> = EMPTY_OBJ,
 ): WatchHandle {
+  const { immediate } = options
+
   let getter: () => any = NOOP
   let effect: ReactiveEffect
   const reactiveGetter = (source: object) => {}
@@ -46,9 +60,6 @@ export function watch<T>(
 
   effect.scheduler = job
 
-  // if (cb) {
-  //   effect.run()
-  // }
   effect.run()
 
   const wathchHandle: WatchHandle = () => {}

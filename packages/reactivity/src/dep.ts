@@ -1,6 +1,12 @@
 import { isArray, isIntegerKey, isMap } from '@vue/shared'
 import { TrackOpTypes, TriggerOpTypes } from './constant'
-import { activeEffect, effect, endBatch, Subscriber } from './effect'
+import {
+  activeEffect,
+  effect,
+  EffectFlags,
+  endBatch,
+  Subscriber,
+} from './effect'
 import { ComputedRefImpl } from './computed'
 
 export const targetMap = new WeakMap()
@@ -18,8 +24,8 @@ export class Link {
   prevActiveSub?: Link
 
   constructor(
-    public sub: Subscriber,
-    public dep: Dep,
+    public sub: Subscriber, // activeEffect
+    public dep: Dep, // dep
   ) {
     this.nextDep =
       this.nextSub =
@@ -31,7 +37,7 @@ export class Link {
 }
 
 export class Dep {
-  private deps = new Set()
+  deps = new Set()
   activeLink?: Link = undefined
   // 双向链表的尾部
   subs?: Link = undefined
@@ -43,12 +49,14 @@ export class Dep {
   track() {
     if (!activeEffect) return
 
-    this.deps.add(activeEffect)
     // activeEffect反向收集当前deps, 执行stop方法的时候 清空当前activeEffect
     let link = (this.activeLink = new Link(activeEffect, this))
     if (!activeEffect.deps) {
-      activeEffect.deps = link
+      activeEffect.deps = activeEffect.depsTail = link
+    } else {
     }
+
+    addSub(link)
   }
 
   trigger() {
@@ -62,12 +70,31 @@ export class Dep {
         ;(effect as any).trigger()
       }
     })
+
+    for (let link = this.subs; link; link = link.prevSub) {
+      // link.dep.deps.forEach(effect => {
+      //   if (effect) {
+      //     ;(effect as any).trigger()
+      //   }
+      // })
+      // if ( link.sub.notify() ) {
+      //   link.sub.deps
+      // }
+    }
   }
 
   cleanup() {
     // this.deps.forEach(dep => dep.delete(this))
     this.deps.delete(activeEffect)
   }
+}
+
+function addSub(link: Link) {
+  // this.deps.add(activeEffect)
+  // if (link.sub.flags & EffectFlags.DIRTY) {
+  // }
+  link.dep.deps.add(activeEffect)
+  link.dep.subs = link
 }
 
 export function track(target: object, type: TrackOpTypes, key: unknown) {
@@ -132,4 +159,13 @@ export function trigger(target, type: TriggerOpTypes, key) {
   }
 
   endBatch()
+}
+
+export function getDepFromReactive(
+  object: any,
+  key: string | symbol,
+): Dep | undefined {
+  const depMap = targetMap.get(object)
+
+  return depMap && depMap.get(key)
 }
