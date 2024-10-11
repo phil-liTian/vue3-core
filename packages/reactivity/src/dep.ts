@@ -2,10 +2,12 @@ import { isArray, isIntegerKey, isMap } from '@vue/shared'
 import { TrackOpTypes, TriggerOpTypes } from './constant'
 import {
   activeEffect,
+  shouldTrack,
   effect,
   EffectFlags,
   endBatch,
   Subscriber,
+  startBatch,
 } from './effect'
 import { ComputedRefImpl } from './computed'
 
@@ -30,6 +32,7 @@ export class Link {
     this.nextDep =
       this.nextSub =
       this.prevDep =
+      this.nextSub =
       this.prevSub =
       this.prevActiveSub =
         undefined
@@ -47,13 +50,16 @@ export class Dep {
   constructor(public computed?: ComputedRefImpl | undefined) {}
 
   track() {
-    if (!activeEffect) return
+    if (!activeEffect || !shouldTrack) return
 
     // activeEffect反向收集当前deps, 执行stop方法的时候 清空当前activeEffect
     let link = (this.activeLink = new Link(activeEffect, this))
     if (!activeEffect.deps) {
+      // 初始化activeEffect的deps和depsTail
       activeEffect.deps = activeEffect.depsTail = link
     } else {
+      // effect 形成一个链表
+      activeEffect.depsTail.nextDep = link
     }
 
     addSub(link)
@@ -70,21 +76,21 @@ export class Dep {
         ;(effect as any).trigger()
       }
     })
-
-    for (let link = this.subs; link; link = link.prevSub) {
-      // link.dep.deps.forEach(effect => {
-      //   if (effect) {
-      //     ;(effect as any).trigger()
-      //   }
-      // })
-      // if ( link.sub.notify() ) {
-      //   link.sub.deps
-      // }
-    }
+    // try {
+    //   for (let link = this.subs; link; link = link.prevSub) {
+    //     if (link.sub.notify()) {
+    //       // link.sub.notify()
+    //     }
+    //   }
+    // } finally {
+    //   endBatch()
+    // }
   }
 
   cleanup() {
     // this.deps.forEach(dep => dep.delete(this))
+    // activeEffect.deps
+    this.subs = undefined
     this.deps.delete(activeEffect)
   }
 }
@@ -120,6 +126,8 @@ export function trigger(target, type: TriggerOpTypes, key) {
       dep.trigger()
     }
   }
+
+  startBatch()
 
   const depsMap = targetMap.get(target)
 

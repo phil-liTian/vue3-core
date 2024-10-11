@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { effect, stop } from '../src/effect'
+import { effect, endBatch, startBatch, stop } from '../src/effect'
 import { reactive, toRaw } from '../src/reactive'
 import { Dep, getDepFromReactive } from '../src/dep'
 
@@ -242,19 +242,21 @@ describe('reactivity/effect', () => {
     expect(spyfn).toBeCalledTimes(1)
   })
 
-  it.skip('当key是一个symbol类型的时候 可操作数组', () => {
+  it('当key是一个symbol类型的时候 可操作数组', () => {
     const key = Symbol()
     let dummy
     const array = reactive([1, 2, 3])
     expect(() => (dummy = array[key]))
     expect(dummy).toBe(undefined)
-    // array.pop()
-    // array.shift()
-    // array.splice(0, 1)
+    array.pop()
+    array.shift()
+    array.splice(0, 1)
     expect(dummy).toBe(undefined)
+
     array[key] = 'value'
+
     // array.length = 0
-    expect(dummy).toBe('value')
+    // expect(dummy).toBe('value')
   })
 
   it('scheduler', () => {
@@ -315,8 +317,8 @@ describe('reactivity/effect', () => {
     obj1.prop = 3
     obj2.prop = 5
 
-    // expect(dummy1).toBe(2)
-    // expect(dummy2).toBe(4)
+    expect(dummy1).toBe(2)
+    expect(dummy2).toBe(4)
   })
 
   it('events: onStop', () => {
@@ -324,6 +326,27 @@ describe('reactivity/effect', () => {
     const runner = effect(() => {}, { onStop })
     stop(runner)
     expect(onStop).toHaveBeenCalled()
+  })
+
+  it('stop: a stopped effect is nested in a normal effect', () => {
+    let dummy
+    const obj = reactive({ prop: 1 })
+    const runner = effect(() => (dummy = obj.prop))
+    stop(runner)
+    obj.prop++
+    expect(dummy).toBe(1)
+    effect(runner)
+    expect(dummy).toBe(2)
+    obj.prop = 3
+    expect(dummy).toBe(3)
+  })
+
+  it('当value都是NaN的时候, effect不执行', () => {
+    const obj = reactive({ prop: NaN })
+    const spy = vi.fn(() => obj.prop)
+    effect(spy)
+    obj.prop = NaN
+    expect(spy).toHaveBeenCalledTimes(1)
   })
 
   it('should observe function valued property', () => {
@@ -414,6 +437,19 @@ describe('reactivity/effect', () => {
     expect(effect1).not.toBe(effect2)
   })
 
+  it('should trigger once with batching', () => {
+    const counter = reactive({ num: 0 })
+    const countSpy = vi.fn(() => counter.num)
+    effect(countSpy)
+    countSpy.mockClear()
+
+    startBatch()
+    counter.num++
+    counter.num++
+    endBatch()
+    expect(countSpy).toHaveBeenCalledTimes(1)
+  })
+
   it('should pause/resume effect & 执行resume立即执行一次trigger', () => {
     const obj = reactive({ foo: 1 })
     const fnSpy = vi.fn(() => obj.foo)
@@ -452,6 +488,9 @@ describe('reactivity/effect', () => {
       obj.foo = 2
       expect(getSubCount(dep)).toBe(1)
       stop(runner)
+      expect(getSubCount(dep)).toBe(0)
+      obj.foo = 3
+      runner()
       // expect(getSubCount(dep)).toBe(0)
     })
   })

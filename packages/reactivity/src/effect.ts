@@ -4,7 +4,14 @@ import { Dep, Link } from './dep'
 import { ComputedRefImpl } from './computed'
 import { activeEffectScope } from './effectScope'
 
+/**
+ * @description 当前正在收集的effect
+ */
 export let activeEffect
+/**
+ * @description 标识是否应该被收集
+ */
+export let shouldTrack = true
 
 export enum EffectFlags {
   ACTIVE = 1 << 0,
@@ -21,6 +28,7 @@ export interface ReactiveEffectOptions {
 export interface Subscriber {
   deps?: Link
   flags: EffectFlags
+
   notify(): true | void
 }
 
@@ -39,26 +47,29 @@ export class ReactiveEffect {
 
   // 链表尾部
   depsTail?: Link = undefined
-  constructor(fn) {
+  constructor(public fn) {
     if (activeEffectScope && activeEffectScope.active) {
       activeEffectScope.effects.push(this)
     }
-
-    this._fn = fn
   }
 
   run() {
     // 依赖收集的函数内容
+    // const prevEffect = activeEffect
     activeEffect = this
-
-    return this._fn()
+    shouldTrack = true
+    try {
+      return this.fn()
+    } finally {
+      // activeEffect = prevEffect
+    }
   }
 
   stop() {
+    shouldTrack = false
     for (let link = this.deps; link; link = link.nextDep) {
       link.dep.cleanup()
     }
-
     this.onStop && this.onStop()
   }
 
@@ -119,17 +130,21 @@ export function stop<T>(runner: ReactiveEffectRunner<T>) {
 
 // 收集Subscriber
 let batchedSub: Subscriber | undefined
+let batchDepth = 0
 
 export function batch(sub: Subscriber): void {
   batchedSub = sub
 }
 
-export function startBatch() {}
+export function startBatch() {
+  batchDepth++
+}
 
 // 遍历当前的batchedSub, 触发trigger函数
 export function endBatch() {
-  // while(batchedSub) {
-  // }
+  if (--batchDepth > 0) {
+    return
+  }
   let effect = batchedSub
   let error: unknown
 
