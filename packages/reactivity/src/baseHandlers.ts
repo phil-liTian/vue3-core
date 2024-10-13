@@ -33,7 +33,11 @@ class BaseReactiveHandler {
 
     // 通过toRaw获取原始类型时 直接返回target
     if (key === ReactiveFlags.RAW) {
-      return target
+      // 只有对象的原型相同时才返回target
+      if (Object.getPrototypeOf(target) === Object.getPrototypeOf(receiver)) {
+        return target
+      }
+      return
     }
 
     const targetIsArray = isArray(target)

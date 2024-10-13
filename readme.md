@@ -46,3 +46,28 @@
 8. triggerRef 对于shallowRef对象, 如果值发生变化，不会自动触发依赖。这时候可以调用triggerRef手动触发依赖。触发当前ref身上dep。
 9. customRef 自定义ref。通过向外抛出当前ref身上的dep, 实现自定义依赖收集及派发更新过程。vueuse中refAutoReset就是基于当前api实现
 ```
+
+#### 用于存储数据的双向链表
+```js
+export class Link {
+  nextDep?: Link
+  prevDep?: Link
+  nextSub?: Link
+  prevSub?: Link
+  prevActiveSub?: Link
+
+  constructor(
+    public sub: Subscriber, // activeEffect
+    public dep: Dep, // dep(收集依赖的容器)
+  ) {
+    this.nextDep =
+      this.nextSub =
+      this.prevDep =
+      this.nextSub =
+      this.prevSub =
+      this.prevActiveSub =
+        undefined
+  }
+}
+```
+

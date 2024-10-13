@@ -167,6 +167,8 @@ export function toValue<T>(source: MaybeRefOrGetter<T>): T {
   return isFunction(source) ? source() : unRef(source)
 }
 
+// export function proxyRefs() {}
+
 // toRef可保留object的响应式
 class ObjectRefImpl<T extends object, K extends keyof T> {
   public readonly [ReactiveFlags.IS_REF] = true

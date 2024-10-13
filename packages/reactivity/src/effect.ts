@@ -16,6 +16,8 @@ export let shouldTrack = true
 export enum EffectFlags {
   ACTIVE = 1 << 0,
   RUNNING = 1 << 1,
+  TRACKING = 1 << 2,
+  NOTIFIED = 1 << 3,
   DIRTY = 1 << 4, // 标识计算属性是否需要重新计算
   PAUSE = 1 << 6, // 标识是否暂停监听
 }
@@ -28,6 +30,7 @@ export interface ReactiveEffectOptions {
 export interface Subscriber {
   deps?: Link
   flags: EffectFlags
+  next?: Subscriber | undefined
 
   notify(): true | void
 }
@@ -41,9 +44,11 @@ export class ReactiveEffect {
   private _fn: any
   scheduler?: any
   onStop?: () => void
-  flags: EffectFlags = EffectFlags.ACTIVE
+  flags: EffectFlags = EffectFlags.ACTIVE | EffectFlags.TRACKING
   // 用作反向收集dep, 实现stop方法
   deps?: Link = undefined
+
+  next?: Subscriber = undefined
 
   // 链表尾部
   depsTail?: Link = undefined
@@ -54,6 +59,10 @@ export class ReactiveEffect {
   }
 
   run() {
+    if (!(this.flags & EffectFlags.ACTIVE)) {
+      return this.fn()
+    }
+    this.flags |= EffectFlags.RUNNING
     // 依赖收集的函数内容
     // const prevEffect = activeEffect
     activeEffect = this
@@ -85,7 +94,10 @@ export class ReactiveEffect {
 
   // 通知需要更新batchedSub
   notify() {
-    batch(this)
+    // 已经通知过需要更新的sub, 无需再通知
+    if (!(this.flags & EffectFlags.NOTIFIED)) {
+      batch(this)
+    }
   }
 
   pause() {
@@ -133,6 +145,8 @@ let batchedSub: Subscriber | undefined
 let batchDepth = 0
 
 export function batch(sub: Subscriber): void {
+  sub.flags |= EffectFlags.NOTIFIED
+  sub.next = batchedSub
   batchedSub = sub
 }
 
@@ -142,18 +156,60 @@ export function startBatch() {
 
 // 遍历当前的batchedSub, 触发trigger函数
 export function endBatch() {
-  if (--batchDepth > 0) {
-    return
-  }
-  let effect = batchedSub
-  let error: unknown
+  if (!batchedSub) return
 
-  try {
-    ;(effect as ReactiveEffect).trigger()
-  } catch (err) {
-    if (!error) error = err
+  while (batchedSub) {
+    let e: Subscriber | undefined = batchedSub
+    let next: Subscriber | undefined
+
+    while (e) {
+      e.flags &= ~EffectFlags.NOTIFIED
+      e = e.next
+    }
+
+    e = batchedSub
+    batchedSub = undefined
+
+    while (e) {
+      try {
+        if (e.flags & EffectFlags.ACTIVE) {
+          ;(e as ReactiveEffect).trigger()
+        }
+      } catch (error) {}
+
+      next = e.next
+      e.next = undefined
+      e = next
+    }
   }
 
+  // let e = batchedSub
+
+  // while (e) {
+  //   ;(e as ReactiveEffect).trigger()
+
+  //   e = e.next as Subscriber
+  // }
+
+  // ;(batchedSub as ReactiveEffect).trigger()
+
+  // if (--batchDepth > 0) {
+  //   return
+  // }
+  // let e: Subscriber | undefined = batchedSub
+  // let next: Subscriber | undefined = undefined
+  // let error: unknown
+  // if (!e) return
+  // while (e) {
+  //   ;(e as ReactiveEffect).trigger()
+  //   next = e?.next
+  //   e!.next = undefined
+  //   e = next
+  // }
+  // try {
+  // } catch (err) {
+  //   if (!error) error = err
+  // }
   // if (error) throw error
 }
 

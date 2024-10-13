@@ -1,8 +1,4 @@
 export {
-  type Ref,
-  type MaybeRef,
-  type ToRefs,
-  type ToRef,
   ref,
   isRef,
   toRef,
@@ -12,6 +8,11 @@ export {
   shallowRef,
   triggerRef,
   customRef,
+  // proxyRefs,
+  type Ref,
+  type MaybeRef,
+  type ToRefs,
+  type ToRef,
 } from './ref'
 
 export {

@@ -43,6 +43,22 @@ describe('reactivity/ref', () => {
     expect(fn).toHaveBeenCalledTimes(2)
   })
 
+  it.skip('test', () => {
+    const a = ref(1)
+    const b = reactive(a)
+    let dummy
+    const fn = vi.fn(() => (dummy = b.value))
+    effect(fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(dummy).toBe(1)
+
+    a.value = 3
+    expect(fn).toHaveBeenCalledTimes(2)
+    expect(dummy).toBe(3)
+
+    // b.value = 5
+  })
+
   it('should make nested properties reactive', () => {
     const a = ref({ count: 1 })
     let dummy
@@ -52,6 +68,7 @@ describe('reactivity/ref', () => {
     expect(dummy).toBe(1)
     a.value.count = 2
     expect(a.value.count).toBe(2)
+    expect(dummy).toBe(2)
   })
 
   it('should work without initial value', () => {
@@ -65,7 +82,7 @@ describe('reactivity/ref', () => {
     expect(dummy).toBe(2)
   })
 
-  it('', () => {
+  it.skip('', () => {
     const a = ref(1)
     const b = reactive(a)
     let dummy

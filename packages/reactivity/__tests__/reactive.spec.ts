@@ -225,7 +225,7 @@ describe('reactivity/reactive', () => {
     // expect(dummy).toBe(2)
   })
 
-  it.skip('toRaw on object using reactive as prototype should work', () => {
+  it('toRaw on object using reactive as prototype', () => {
     const original = { foo: 1 }
     const observed = reactive(original)
     const inherted = Object.create(observed)
