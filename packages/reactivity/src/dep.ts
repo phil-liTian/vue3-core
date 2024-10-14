@@ -85,7 +85,7 @@ export class Dep {
   }
 
   notify() {
-    // startBatch()
+    startBatch()
     // this.deps.forEach(effect => {
     //   if (effect) {
     //     // ;(effect as any).run()

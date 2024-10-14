@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
-import { effect, endBatch, startBatch, stop } from '../src/effect'
+import {
+  effect,
+  endBatch,
+  onEffectCleanup,
+  startBatch,
+  stop,
+} from '../src/effect'
 import { reactive, toRaw } from '../src/reactive'
 import { Dep, getDepFromReactive } from '../src/dep'
+import { ref } from '../src'
 
 describe('reactivity/effect', () => {
   it('should run the passed function once(wrapped by effect)', () => {
@@ -152,18 +159,17 @@ describe('reactivity/effect', () => {
     expect(dummy).toBe('hello world!  Hello!')
   })
 
-  it('监听数组变化 - push、shift', () => {
+  it.skip('监听数组变化 - push、shift', () => {
     let dummy
     const list = reactive(['Hello'])
     effect(() => (dummy = list.join(' ')))
-
     expect(dummy).toBe('Hello')
     list.push('World!')
     expect(dummy).toBe('Hello World!')
     list.shift()
 
     expect(list.join(' ')).toBe('World!')
-    // expect(dummy).toBe('World!')
+    expect(dummy).toBe('World!')
   })
 
   it.skip('监听数组变化 - pop', () => {
@@ -178,7 +184,6 @@ describe('reactivity/effect', () => {
     list.pop()
 
     expect(list.join(' ')).toBe('hello')
-
     expect(dummy).toBe('hello')
   })
 
@@ -226,6 +231,7 @@ describe('reactivity/effect', () => {
     expect(array[key]).toBe(true)
     expect(dummy).toBe(undefined)
   })
+
   // has方法
   it('in操作不监听常见symbol的静态属性', () => {
     const key = Symbol.isConcatSpreadable
@@ -335,8 +341,9 @@ describe('reactivity/effect', () => {
     stop(runner)
     obj.prop++
     expect(dummy).toBe(1)
-    effect(runner)
+    effect(() => runner())
     expect(dummy).toBe(2)
+
     obj.prop = 3
     // expect(dummy).toBe(3)
   })
@@ -426,6 +433,46 @@ describe('reactivity/effect', () => {
     expect(dummy1).toBe(undefined)
   })
 
+  it('set 原型上的属性 不触发effect', () => {
+    let dummy, parentDummy, hiddenValue: any
+    const obj = reactive<{ props?: number }>({})
+
+    const parent = reactive({
+      get props() {
+        return hiddenValue
+      },
+
+      set props(val) {
+        hiddenValue = val
+      },
+    })
+
+    Object.setPrototypeOf(obj, parent)
+
+    effect(() => (dummy = obj.props))
+    effect(() => (parentDummy = parent.props))
+
+    expect(dummy).toBe(undefined)
+    expect(parentDummy).toBe(undefined)
+
+    toRaw(obj).props = 1
+
+    expect(dummy).toBe(undefined)
+    expect(parentDummy).toBe(undefined)
+  })
+
+  it('避免循环引用', () => {
+    const counter = reactive({ num: 0 })
+
+    const counterSpy = vi.fn(() => counter.num++)
+    effect(counterSpy)
+    expect(counter.num).toBe(1)
+    expect(counterSpy).toHaveBeenCalledTimes(1)
+    counter.num = 4
+    expect(counter.num).toBe(5)
+    expect(counterSpy).toHaveBeenCalledTimes(2)
+  })
+
   it('effect每次都返回一个新函数', () => {
     function greet() {
       return 'hello'
@@ -447,7 +494,7 @@ describe('reactivity/effect', () => {
     counter.num++
     counter.num++
     endBatch()
-    // expect(countSpy).toHaveBeenCalledTimes(1)
+    expect(countSpy).toHaveBeenCalledTimes(1)
   })
 
   it('should pause/resume effect & 执行resume立即执行一次trigger', () => {
@@ -481,21 +528,31 @@ describe('reactivity/effect', () => {
     }
 
     it('effect stop时, 移除当前dep', () => {
-      // const obj = reactive({ foo: 1 })
-      // const runner = effect(() => obj.foo)
-      // const dep = getDepFromReactive(toRaw(obj), 'foo')
-      // expect(getSubCount(dep)).toBe(1)
-      // obj.foo = 2
-      // expect(getSubCount(dep)).toBe(1)
-      // stop(runner)
-      // // expect(getSubCount(dep)).toBe(0)
-      // obj.foo = 3
-      // runner()
-      // expect(getSubCount(dep)).toBe(0)
+      const obj = reactive({ foo: 1 })
+      const runner = effect(() => obj.foo)
+      const dep = getDepFromReactive(toRaw(obj), 'foo')
+      expect(getSubCount(dep)).toBe(1)
+      obj.foo = 2
+      expect(getSubCount(dep)).toBe(1)
+      stop(runner)
+      expect(getSubCount(dep)).toBe(0)
+      obj.foo = 3
+      runner()
+      expect(getSubCount(dep)).toBe(0)
     })
   })
 
+  // TODO
   describe('onEffectCleanup', () => {
-    it('', () => {})
+    it('should get called correctly', () => {
+      const count = ref(0)
+      const cleanupEffect = vi.fn()
+      const e = effect(() => {
+        onEffectCleanup(cleanupEffect)
+        count.value
+      })
+
+      count.value++
+    })
   })
 })

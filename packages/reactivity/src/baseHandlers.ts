@@ -93,12 +93,15 @@ class MutableReactiveHandler extends BaseReactiveHandler {
 
     const res = Reflect.set(target, key, value, receiver)
 
-    if (!hadKey) {
-      // 新增属性
-      trigger(target, TriggerOpTypes.ADD, key)
-    } else if (hasChanged(oldValue, value)) {
-      // update(值发生改变时才需要更新)
-      trigger(target, TriggerOpTypes.SET, key)
+    // 控制只有receiver和target相同时才触发依赖(及当前对象自身的setter), 如果触发的是原型上的setter, 则当前依赖不会触发
+    if (target === toRaw(receiver)) {
+      if (!hadKey) {
+        // 新增属性
+        trigger(target, TriggerOpTypes.ADD, key)
+      } else if (hasChanged(oldValue, value)) {
+        // update(值发生改变时才需要更新)
+        trigger(target, TriggerOpTypes.SET, key)
+      }
     }
 
     return res

@@ -11,9 +11,9 @@ function reactiveReadArray<T>(array: T[]): T[] {
 }
 
 export const arrayInstrumentations = <any>{
-  join(separator?: string) {
-    // console.log('separator', reactiveReadArray(this))
+  __proto__: null,
 
+  join(separator?: string) {
     return reactiveReadArray(this).join(separator)
   },
 

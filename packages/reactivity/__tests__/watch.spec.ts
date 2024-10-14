@@ -43,6 +43,7 @@ describe('watch', () => {
 
       watch(onCleanup => {
         source.value
+
         // onCleanup(() => (dummy += 2))
       })
     })
