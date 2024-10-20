@@ -1,19 +1,24 @@
 {
   "name": "vue3-core",
   "version": "1.0.0",
-  "main": "rollup.config.js",
+  "main": "lib/vue-core.cjs.js",
+  "module": "lib/vue-core.esm.js",
   "type": "module",
   "scripts": {
     "test": "vitest",
     "lint": "eslint --cache .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build": "rollup -c rollup.config.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@rollup/plugin-typescript": "^12.1.1",
     "prettier": "^3.3.3",
+    "rollup": "^4.24.0",
+    "tslib": "^2.8.0",
     "typescript-eslint": "^8.7.0",
     "vitest": "^2.1.1"
   }
