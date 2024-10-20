@@ -461,7 +461,7 @@ describe('reactivity/effect', () => {
     expect(parentDummy).toBe(undefined)
   })
 
-  it('避免循环引用', () => {
+  it('避免effect中循环引用 造成死循环', () => {
     const counter = reactive({ num: 0 })
 
     const counterSpy = vi.fn(() => counter.num++)
@@ -471,6 +471,65 @@ describe('reactivity/effect', () => {
     counter.num = 4
     expect(counter.num).toBe(5)
     expect(counterSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it('避免 在effect中循环调用array 的push、unshift、shift、pop 等方法造成死循环', () => {
+    ;['push', 'unshift'].map(key => {
+      const arr = reactive<number[]>([])
+      const counterSpy1 = vi.fn(() => (arr[key] as any)(1))
+      const counterSpy2 = vi.fn(() => (arr[key] as any)(2))
+      effect(counterSpy1)
+      effect(counterSpy2)
+      expect(arr.length).toBe(2)
+      expect(counterSpy1).toHaveBeenCalledTimes(1)
+      expect(counterSpy2).toHaveBeenCalledTimes(1)
+    })
+    ;(['pop'] as const).forEach(key => {
+      const arr = reactive<number[]>([1, 2, 3, 4])
+      const counterSpy1 = vi.fn(() => (arr[key] as any)())
+      const counterSpy2 = vi.fn(() => (arr[key] as any)())
+      effect(counterSpy1)
+      effect(counterSpy2)
+      expect(arr.length).toBe(2)
+      expect(counterSpy1).toHaveBeenCalledTimes(1)
+      expect(counterSpy2).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('should allow explicitly recursive raw function loops', () => {
+    const count = reactive({ num: 0 })
+    const numSpy = vi.fn(() => {
+      count.num++
+      if (count.num < 10) {
+        numSpy()
+      }
+    })
+
+    effect(numSpy)
+    expect(count.num).toBe(10)
+    expect(numSpy).toHaveBeenCalledTimes(10)
+  })
+
+  it('effect中引用其它effect时，避免死循环', () => {
+    const nums = reactive({ num1: 0, num2: 1 })
+    const spy1 = vi.fn(() => (nums.num1 = nums.num2))
+    const spy2 = vi.fn(() => (nums.num2 = nums.num1))
+    effect(spy1)
+    effect(spy2)
+    expect(nums.num1).toBe(1)
+    expect(nums.num2).toBe(1)
+
+    // nums.num2 = 4
+    // expect(nums.num1).toBe(4)
+    // expect(nums.num2).toBe(4)
+    // expect(spy1).toHaveBeenCalledTimes(2)
+    // expect(spy2).toHaveBeenCalledTimes(2)
+
+    // nums.num1 = 10
+    // expect(nums.num1).toBe(10)
+    // expect(nums.num2).toBe(10)
+    // expect(spy1).toHaveBeenCalledTimes(3)
+    // expect(spy2).toHaveBeenCalledTimes(3)
   })
 
   it('effect每次都返回一个新函数', () => {

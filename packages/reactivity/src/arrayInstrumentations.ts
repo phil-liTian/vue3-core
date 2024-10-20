@@ -28,6 +28,10 @@ export const arrayInstrumentations = <any>{
   pop() {
     return noTracking(this, 'pop')
   },
+
+  unshift(...args: unknown[]) {
+    return noTracking(this, 'unshift', args)
+  },
 }
 
 // 不需要被track的方法

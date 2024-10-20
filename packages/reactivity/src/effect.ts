@@ -1,6 +1,6 @@
 import { extend, hasChanged } from '@vue/shared'
 import { ReactiveFlags } from './constant'
-import { Dep, Link } from './dep'
+import { Dep, globalVersion, Link } from './dep'
 import { ComputedRefImpl } from './computed'
 import { activeEffectScope } from './effectScope'
 
@@ -76,7 +76,7 @@ export class ReactiveEffect {
     } finally {
       // activeEffect = prevEffect
 
-      // 避免effect函数中循环引用 循环触发setter, 无限被收集的问题, 只有运行中的effect才被收集
+      // 避免effect函数中循环引用, effect内部的函数继续触发setter, 无限被收集的问题, 只有运行中的effect才被收集
       this.flags &= ~EffectFlags.RUNNING
     }
   }
@@ -197,13 +197,21 @@ export function endBatch() {
 
 // 处理computed
 export function refreshComputed(computed: ComputedRefImpl) {
-  // 不是DIRTY 不需要重新计算
-  if (!(computed.flags & EffectFlags.DIRTY)) {
+  // 不是DIRTY 不需要重新计算, 且不是在监听中, 则直接返回
+  // if (
+  //   !(computed.flags & EffectFlags.DIRTY) &&
+  //   computed.flags & EffectFlags.TRACKING
+  // ) {
+  //   return
+  // }
+
+  // 清除DIRTY标志位
+  // computed.flags &= ~EffectFlags.DIRTY
+
+  if (globalVersion === computed.globalVersion) {
     return
   }
-
-  // 清除DIRTY标志位的目的
-  computed.flags &= ~EffectFlags.DIRTY
+  computed.globalVersion = globalVersion
 
   const value = computed.fn(computed._value)
   if (hasChanged(value, computed._value)) {

@@ -17,6 +17,10 @@ export const MAP_KEY_ITERATE_KEY = Symbol('Map keys iterate')
 export const ITERATE_KEY = Symbol('object iterate')
 export const ARRAY_ITERATE_KEY = Symbol('Array Iterate')
 
+/**
+ * 每次响应式数据发生变化时，自增1；在computed中使用, 如果值没有发生变化, 则computed不重新计算
+ */
+export let globalVersion = 0
 // 创建一个双向链表
 export class Link {
   nextDep?: Link
@@ -81,6 +85,7 @@ export class Dep {
   }
 
   trigger() {
+    globalVersion++
     this.notify()
   }
 
@@ -121,8 +126,14 @@ function addSub(link: Link) {
   // link.dep.sc++
 
   if (link.sub.flags & EffectFlags.TRACKING) {
+    const computed = link.dep.computed
+    if (computed) {
+      computed.flags |= EffectFlags.TRACKING | EffectFlags.DIRTY
+    }
+
     link.dep.deps.add(activeEffect)
     const currentTail = link.dep.subs
+
     if (currentTail !== link) {
       link.prevSub = currentTail
     }
@@ -170,7 +181,11 @@ export function trigger(target, type: TriggerOpTypes, key) {
 
   const depsMap = targetMap.get(target)
 
-  if (!depsMap) return
+  if (!depsMap) {
+    // 没有被track过
+    globalVersion++
+    return
+  }
   let dep = depsMap.get(key)
 
   const targetIsArray = isArray(target)

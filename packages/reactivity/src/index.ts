@@ -30,12 +30,20 @@ export {
   toReadonly,
 } from './reactive'
 
+export {
+  computed,
+  type ComputedRef,
+  type WritableComputedRef,
+  type WritableComputedOptions,
+  type ComputedGetter,
+  type ComputedSetter,
+  type ComputedRefImpl,
+} from './computed'
+
+export { watch } from './watch'
+
 export { effect } from './effect'
 
 export { effectScope, onScopeDispose } from './effectScope'
-
-export { computed } from './computed'
-
-export { watch } from './watch'
 
 export { trigger, track } from './dep'

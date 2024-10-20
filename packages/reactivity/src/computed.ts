@@ -1,7 +1,16 @@
 import { isFunction } from '@vue/shared'
 import { ReactiveFlags } from './constant'
-import { Dep } from './dep'
+import { Dep, globalVersion } from './dep'
 import { EffectFlags, refreshComputed } from './effect'
+import { Ref } from './ref'
+
+interface BaseComputedRef<T, S = T> extends Ref<T, S> {}
+
+export interface ComputedRef<T = any> extends BaseComputedRef<T> {
+  readonly value: T
+}
+
+export interface WritableComputedRef<T, S = T> extends BaseComputedRef<T, S> {}
 
 export type ComputedGetter<T> = (oldValue?: T) => T
 export type ComputedSetter<T> = (newValue: T) => void
@@ -19,6 +28,8 @@ export class ComputedRefImpl<T = any> {
   readonly dep: Dep = new Dep(this)
 
   flags: EffectFlags = EffectFlags.DIRTY
+
+  globalVersion: number = globalVersion - 1
   constructor(
     public fn: ComputedGetter<T>,
     private readonly setter: ComputedSetter<T> | undefined,
