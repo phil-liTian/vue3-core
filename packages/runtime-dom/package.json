@@ -1,5 +1,5 @@
 {
-  "name": "vue",
+  "name": "runtime-dom",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,9 +9,7 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "dependencies": {
-    "@vue/reactivity": "workspace:*",
-    "@vue/shared": "workspace:*",
-    "@vue/runtime-core": "workspace:*"
+  "devDependencies": {
+    "@vue/runtime-core": "workspace:*"  
   }
 }

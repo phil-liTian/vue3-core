@@ -71,3 +71,128 @@ export class Link {
 }
 ```
 
+### runtime-core 运行时核心
+
+主要流程
+```js
+// TODO 优化 自定义渲染器
+function createApp(rootComponent) {
+  return {
+    mount(rootContainer) {
+      render(rootComponent, rootContainer)
+    }
+  }
+}
+
+// vnode可以是一个对象
+function render(vnode, container) {
+  patch(vnode, container)
+}
+
+
+function patch(vnode, container) {
+  // element类型
+  if ( typeof vnode.type === 'string' ) {
+    processElement(vnode, container)
+  } else {
+    processComponent(vnode, container)
+  }
+}
+
+// 处理element
+function  processElement(vnode, container) {
+  // init -> update
+  mountElement(vnode, container)
+}
+
+
+// 处理组件
+function processComponent(vnode, container) {
+  mountComponent(vnode, container)
+}
+
+function mountComponent(vnode, container) {
+  const instance = createComponentInstance(vnode, container)
+
+  // 处理组件实例
+  setupComponent(instance)
+
+  // 拆箱（执行render)
+  setupRenderEffect(instance, container)
+}
+
+function createComponentInstance(vnode, container) {
+  const component = {
+    vnode,
+    type: vnode.type
+  }
+
+  return component
+}
+
+function setupComponent(component) {
+  // 处理props
+  initProps()
+  // 处理插槽
+  initSlots()
+  // 调用setup
+  setupStatefulComponent(component)
+}
+
+// 拆箱
+function setupRenderEffect(instance, container) {
+  const subTree = instance.render()
+  patch(subTree, container)
+}
+
+function setupStatefulComponent(vnode) {
+  const Component = vnode.type
+  const { setup } = Component
+  if ( setup ) {
+    const setupResult = setup()
+    handleSetupResult(instance, setupResult)
+  }
+}
+
+
+// 处理setup返回值
+function handleSetupResult(instance, setupResult) {
+  if (typeof setupResult === 'object') {
+    instance.setupState = setupResult
+  }
+
+  finishComponentSetup(instance)
+}
+
+// 挂载render函数
+function finishComponentSetup(instance) {
+  const Component = instance.type
+  if (Component.render) {
+    instance.render = Component.render
+  }
+}
+
+// 创建元素
+function mountElement(vnode, container) {
+  const el = document.createElement(vnode.type)
+  const { children } = vnode
+
+  if ( Array.isArray(children)) {
+    mountChildren(children, el)
+  } else {
+    el.textContent = vnode.children
+  }
+
+  el.setAttribute('id', '1231')
+
+  container.append(el)
+}
+
+// 处理array children
+function mountChildren (children, container) {
+  children.forEach(child => {
+    patch(child, container)
+  })
+}
+```
+

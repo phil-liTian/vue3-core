@@ -1,5 +1,5 @@
 {
-  "name": "runtime-core",
+  "name": "@vue/runtime-core",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,10 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@vue/reactivity": "workspace: *",
-    "@vue/shared": "workspace: *"
+    "@vue/reactivity": "workspace:*",
+    "@vue/shared": "workspace:*"
   },
   "devDependencies": {
-    "rollup": "^4.24.0"
   }
 }
