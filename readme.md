@@ -194,5 +194,17 @@ function mountChildren (children, container) {
     patch(child, container)
   })
 }
+
+```
+
+重要知识点笔记
+```
+1. 如何实现组件代理对象(在render中可通过this访问setup中返回的data、$el)
+
+2. 如何实现provide/inject？
+
+3. 如何实现自定义渲染器？(依赖runtime-core)
+
+4. 如果实现updateElement，需要如何处理children？
 ```
 

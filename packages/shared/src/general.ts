@@ -45,3 +45,5 @@ export const extend: typeof Object.assign = Object.assign
 
 export const hasChanged = (value: any, oldValue: any): boolean =>
   !Object.is(value, oldValue)
+
+export const isOn = (key: string): boolean => /^on[A-Z]/.test(key)
