@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { computed } from '../src/computed'
-import { effect, reactive, ref } from '../src'
+import { computed, WritableComputedRef } from '../src/computed'
+import { effect, isReadonly, reactive, ref } from '../src'
 
 describe('reactivity/computed', () => {
   it('should return updated value', () => {
@@ -128,4 +128,78 @@ describe('reactivity/computed', () => {
     plusOne.value = 0
     expect(n.value).toBe(-1)
   })
+
+  it('should trigger effect w/ settrt', () => {
+    const n = ref(1)
+    const plusOne = computed({
+      get: () => n.value + 1,
+      set: val => {
+        n.value = val - 1
+      },
+    })
+
+    let dummy
+    effect(() => {
+      dummy = n.value
+    })
+    expect(dummy).toBe(1)
+
+    plusOne.value = 0
+    expect(dummy).toBe(-1)
+  })
+
+  it('在非计算属性effect之前应无效', () => {
+    const plusOneValues: number[] = []
+    const n = ref(0)
+    const plusOne = computed(() => n.value + 1)
+    effect(() => {
+      n.value
+      plusOneValues.push(plusOne.value)
+    })
+    n.value++
+    expect(plusOneValues).toEqual([1, 2])
+  })
+
+  it('如果set一个readonly的computed, 应该抛出警告', () => {
+    const n = ref(1)
+    const plusOne = computed(() => n.value + 1)
+    ;(plusOne as WritableComputedRef<number>).value++
+    expect(
+      'Write opeation failed: computed value is readonly',
+    ).toHaveBeenWarned()
+  })
+
+  it('should be readonly', () => {
+    let a = { a: 1 }
+    const x = computed(() => a)
+    expect(isReadonly(x)).toBe(true)
+    expect(isReadonly(x.value)).toBe(false)
+    expect(isReadonly(x.value.a)).toBe(false)
+
+    const z = computed({
+      get: () => a,
+      set: v => {
+        a = v
+      },
+    })
+
+    expect(isReadonly(z)).toBe(false)
+    expect(isReadonly(z.value)).toBe(false)
+  })
+
+  it('should trigger the second effect', () => {
+    const fnSpy = vi.fn()
+    const v = ref(1)
+    const c = computed(() => v.value)
+    effect(() => c.value)
+    effect(() => {
+      v.value
+      fnSpy()
+    })
+    expect(fnSpy).toHaveBeenCalledTimes(1)
+    v.value++
+    expect(fnSpy).toHaveBeenCalledTimes(2)
+  })
+
+  // it('')
 })

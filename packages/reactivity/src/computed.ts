@@ -3,6 +3,7 @@ import { ReactiveFlags } from './constant'
 import { Dep, globalVersion } from './dep'
 import { EffectFlags, refreshComputed } from './effect'
 import { Ref } from './ref'
+import { warn } from './warning'
 
 interface BaseComputedRef<T, S = T> extends Ref<T, S> {}
 
@@ -34,6 +35,7 @@ export class ComputedRefImpl<T = any> {
     public fn: ComputedGetter<T>,
     private readonly setter: ComputedSetter<T> | undefined,
   ) {
+    // 没有setter就是readonly
     this[ReactiveFlags.IS_READONLY] = !setter
   }
 
@@ -52,9 +54,16 @@ export class ComputedRefImpl<T = any> {
     if (this.setter) {
       this.setter(newValue)
     } else {
+      warn('Write opeation failed: computed value is readonly')
     }
   }
 }
+
+export function computed<T>(getter: ComputedGetter<T>): ComputedRef<T>
+
+export function computed<T, S = T>(
+  options: WritableComputedOptions<T>,
+): WritableComputedRef<T, S>
 
 export function computed<T>(
   getterOrOptions: ComputedGetter<T> | WritableComputedOptions<T>,
