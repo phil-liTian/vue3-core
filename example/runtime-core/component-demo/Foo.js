@@ -1,4 +1,4 @@
-import { h } from '../../../lib/vue-core.esm.js'
+import { h, renderSlots } from '../../../lib/vue-core.esm.js'
 
 export const Foo = {
   setup() {
@@ -8,6 +8,7 @@ export const Foo = {
   },
 
   render() {
-    return h('div', {}, this.$slots.header, 1231, this.$slots.footer)
+    const age = 22
+    return h('div', {}, [renderSlots(this.$slots, 'header', { age }), h('p', {}, 'foo'), renderSlots(this.$slots, 'footer', { age: 100 })])
   }
 }

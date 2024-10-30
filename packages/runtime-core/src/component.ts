@@ -24,7 +24,9 @@ export function createComponentInstance(vnode, parent) {
     props: {},
     provides: parent ? parent.provides : {},
     parent,
+    component: null,
     slots: {},
+    next: null,
   }
 
   return instance

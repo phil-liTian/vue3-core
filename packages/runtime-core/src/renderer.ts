@@ -71,7 +71,7 @@ export function createRenderer() {
 
     // console.log('n1, n2', n1, n2)
 
-    // console.log('update element')
+    console.log('update element')
   }
 
   function mountChildren(children, container, parentComponent) {
@@ -81,7 +81,10 @@ export function createRenderer() {
   }
 
   function mountComponent(vnode: any, container: any, parentComponent) {
-    const instance = createComponentInstance(vnode, parentComponent)
+    const instance = (vnode.component = createComponentInstance(
+      vnode,
+      parentComponent,
+    ))
 
     setupComponent(instance)
 
@@ -89,19 +92,41 @@ export function createRenderer() {
   }
 
   function updateComponent(n1, n2) {
-    console.log('n1, n2', n1, n2)
-
-    // n2.component = n1.component
+    const instance = (n2.component = n1.component)
+    instance.update()
+    instance.next = n2
   }
 
   function setupRenderEffect(instance: any, initialVNode, container: any) {
-    effect(() => {
-      const prevTree = instance.subTree || null
-      const subTree = instance.render.call(instance.proxy)
-      patch(prevTree, subTree, container, instance)
-      instance.subTree = subTree
-      initialVNode.el = subTree.el
+    instance.update = effect(() => {
+      if (!instance.isMounted) {
+        const subTree = instance.render.call(instance.proxy)
+        patch(null, subTree, container, instance)
+        instance.isMounted = true
+        instance.subTree = subTree
+      } else {
+        const { next, vnode } = instance
+        // TODO: 更新逻辑
+        if (next) {
+          next.el = vnode.el
+          updateComponentPreRender(instance, next)
+        }
+
+        const prevTree = instance.subTree || null
+        const subTree = instance.render.call(instance.proxy)
+        patch(prevTree, subTree, container, instance)
+        instance.subTree = subTree
+        initialVNode.el = subTree.el
+      }
     })
+  }
+
+  function updateComponentPreRender(instance, nextVNode) {
+    // let prevProps = instance.vnode.props
+    // prevProps = nextVNode.props
+    instance.vnode = nextVNode
+    instance.next = null
+    instance.props = nextVNode.props
   }
 
   return {

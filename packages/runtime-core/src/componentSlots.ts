@@ -1,16 +1,21 @@
-import { isArray } from '@vue/shared'
+import { isArray, ShapeFlags } from '@vue/shared'
 
 export function initSlots(instance, children) {
-  const { vnode } = instance
+  if (instance.vnode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
+    normalizeObjectSlots(instance.slots, children)
+  }
+}
 
-  // instance.slots = isArray(children) ? children : [children]
-  let slots = {}
+function normalizeObjectSlots(slots, children) {
   for (const key in children) {
     const value = children[key]
     if (value) {
-      slots[key] = isArray(value) ? value : [value]
+      slots[key] = props => normalizeSlotValue(value(props))
     }
   }
+}
 
-  instance.slots = slots
+// 兼容value是对象或者数组的情况
+function normalizeSlotValue(value) {
+  return isArray(value) ? value : [value]
 }

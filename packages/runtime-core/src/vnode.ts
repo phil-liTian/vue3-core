@@ -54,11 +54,15 @@ function _createVNode(
   props: Data | null = null,
   children: unknown = null,
 ): VNode {
-  const shapeFlag = isString(type)
+  let shapeFlag = isString(type)
     ? ShapeFlags.ELEMENT
     : isObject(type)
       ? ShapeFlags.STATEFUL_COMPONENT
       : 0
+
+  if (isObject(children) && (shapeFlag & ShapeFlags.STATEFUL_COMPONENT)) {
+    shapeFlag |= ShapeFlags.SLOTS_CHILDREN
+  }
 
   return createBaseVNode(type, props, children, shapeFlag)
 }
