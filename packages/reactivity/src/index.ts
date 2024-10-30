@@ -8,7 +8,7 @@ export {
   shallowRef,
   triggerRef,
   customRef,
-  // proxyRefs,
+  proxyRefs,
   type Ref,
   type MaybeRef,
   type ToRefs,
@@ -40,7 +40,14 @@ export {
   type ComputedRefImpl,
 } from './computed'
 
-export { watch } from './watch'
+export {
+  watch,
+  onWatcherCleanup,
+  getCurrentWatcher,
+  type WatchOptions,
+  type WatchSource,
+  type OnCleanUp,
+} from './watch'
 
 export { effect } from './effect'
 

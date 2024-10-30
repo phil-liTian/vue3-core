@@ -1,4 +1,6 @@
+import { proxyRefs } from '@vue/reactivity'
 import { initProps } from './componentProps'
+import { initSlots } from './componentSlots'
 import { PublicInstanceProxyHandlers } from './componentPublicInstance'
 import { VNode } from './vnode'
 
@@ -22,15 +24,18 @@ export function createComponentInstance(vnode, parent) {
     props: {},
     provides: parent ? parent.provides : {},
     parent,
+    slots: {},
   }
 
   return instance
 }
 
 export function setupComponent(instance) {
-  // TODO
+  const { children } = instance.vnode
+  // 处理props
   initProps(instance, instance.vnode.props)
-  // initSlots()
+  // 处理插槽
+  initSlots(instance, children)
 
   setupStatefulComponent(instance)
 }
@@ -50,7 +55,9 @@ function setupStatefulComponent(instance) {
 
 function handleSetupResult(instance: any, setupResult: any) {
   if (typeof setupResult === 'object') {
-    instance.setupState = setupResult
+    instance.setupState = proxyRefs(setupResult)
+  } else if (typeof setupResult === 'function') {
+    // TODO： setup的返回值可以是一个函数, 如果是一个函数则认为是render函数, 默认会忽略自定义的render函数
   }
 
   finishComponentSetup(instance)

@@ -1,4 +1,3 @@
-import { hasOwn } from '@vue/shared'
 import { ReactiveFlags, TrackOpTypes, TriggerOpTypes } from './constant'
 import { ITERATE_KEY, track, trigger } from './dep'
 import { Target, toRaw, toReactive, toReadonly } from './reactive'

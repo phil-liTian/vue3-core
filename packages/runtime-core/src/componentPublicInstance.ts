@@ -1,6 +1,7 @@
 export const PublicPropertiesMap = {
   $el: i => i.vnode.el,
   $props: i => i.props,
+  $slots: i => i.slots,
 }
 
 // 处理组件代理对象(在render函数中 通过this访问相关属性)

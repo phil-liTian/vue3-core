@@ -1,6 +1,5 @@
 import { extend, hasChanged } from '@vue/shared'
-import { ReactiveFlags } from './constant'
-import { Dep, globalVersion, Link } from './dep'
+import { globalVersion, Link } from './dep'
 import { ComputedRefImpl } from './computed'
 import { activeEffectScope } from './effectScope'
 
@@ -123,6 +122,10 @@ export class ReactiveEffect {
       // 取消之后立即执行一次
       this.trigger()
     }
+  }
+
+  get dirty(): boolean {
+    return true
   }
 }
 

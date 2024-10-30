@@ -1,22 +1,43 @@
 import { isOn, ShapeFlags } from '@vue/shared'
+import { effect } from '@vue/reactivity'
 import { createComponentInstance, setupComponent } from './component'
-import { createVNode } from './vnode'
+import { createVNode, VNode } from './vnode'
 
 // 实现自定义渲染器
 export function createRenderer() {
   function render(vnode, container, parentComponent) {
-    patch(vnode, container, parentComponent)
+    patch(null, vnode, container, parentComponent)
   }
 
-  function patch(vnode: any, container: any, parentComponent) {
-    processComponent(vnode, container, parentComponent)
-  }
-
-  function processComponent(vnode: any, container: any, parentComponent) {
+  function patch(n1, vnode: any, container: any, parentComponent) {
     if (vnode.shapeFlag & ShapeFlags.ELEMENT) {
+      processElement(n1, vnode, container, parentComponent)
+    } else {
+      processComponent(n1, vnode, container, parentComponent)
+    }
+  }
+
+  function processComponent(
+    n1: VNode | null,
+    n2: any,
+    container: any,
+    parentComponent,
+  ) {
+    if (n1 === null) {
+      // 如果没有n1 说明是挂载组件
+      mountComponent(n2, container, parentComponent)
+    } else {
+      // 如何更新component呢？？？
+      updateComponent(n1, n2)
+    }
+  }
+
+  function processElement(n1, vnode, container, parentComponent) {
+    if (n1 === null) {
       mountElement(vnode, container, parentComponent)
     } else {
-      mountComponent(vnode, container, parentComponent)
+      // 更新Element
+      patchElement(n1, vnode, container, parentComponent)
     }
   }
 
@@ -44,9 +65,18 @@ export function createRenderer() {
     container.appendChild(el)
   }
 
+  // TODO: 如何更新element
+  function patchElement(n1, n2, container, parentComponent) {
+    const el = (n2.el = n1.el)
+
+    // console.log('n1, n2', n1, n2)
+
+    // console.log('update element')
+  }
+
   function mountChildren(children, container, parentComponent) {
     children.forEach(child => {
-      patch(child, container, parentComponent)
+      patch(null, child, container, parentComponent)
     })
   }
 
@@ -58,16 +88,24 @@ export function createRenderer() {
     setupRenderEffect(instance, instance.vnode, container)
   }
 
+  function updateComponent(n1, n2) {
+    console.log('n1, n2', n1, n2)
+
+    // n2.component = n1.component
+  }
+
   function setupRenderEffect(instance: any, initialVNode, container: any) {
-    const subTree = instance.render.call(instance.proxy)
-
-    patch(subTree, container, instance)
-
-    initialVNode.el = subTree.el
+    effect(() => {
+      const prevTree = instance.subTree || null
+      const subTree = instance.render.call(instance.proxy)
+      patch(prevTree, subTree, container, instance)
+      instance.subTree = subTree
+      initialVNode.el = subTree.el
+    })
   }
 
   return {
-    // render,
+    render,
     createApp: rooterComponent => {
       return {
         mount: container => {

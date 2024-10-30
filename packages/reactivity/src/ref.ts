@@ -167,7 +167,12 @@ export function toValue<T>(source: MaybeRefOrGetter<T>): T {
   return isFunction(source) ? source() : unRef(source)
 }
 
-// export function proxyRefs() {}
+// 作用: 在组件中可直接使用ref, 或computed返回的值, 而无需再.value调用了
+export function proxyRefs<T extends object>(objectWithRefs: T) {
+  return isReactive(objectWithRefs)
+    ? objectWithRefs
+    : new Proxy(objectWithRefs, shallowUnwrapHandlers)
+}
 
 // toRef可保留object的响应式
 class ObjectRefImpl<T extends object, K extends keyof T> {
@@ -211,4 +216,18 @@ function propertyToRef(
   return isRef(value)
     ? value
     : (new ObjectRefImpl(source, key, defaultValue) as any)
+}
+
+const shallowUnwrapHandlers: ProxyHandler<any> = {
+  get(target, key) {
+    return unRef(Reflect.get(target, key))
+  },
+  set(target, key, value) {
+    const oldValue = target[key]
+    if (isRef(oldValue) && !isRef(value)) {
+      return (oldValue.value = value)
+    } else {
+      return Reflect.set(target, key, value)
+    }
+  },
 }

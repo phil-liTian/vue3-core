@@ -38,6 +38,9 @@ importers:
       '@vue/reactivity':
         specifier: workspace:*
         version: link:../reactivity
+      '@vue/runtime-test':
+        specifier: workspace:*
+        version: link:../runtime-test
       '@vue/shared':
         specifier: workspace:*
         version: link:../shared
@@ -50,6 +53,8 @@ importers:
       '@vue/shared':
         specifier: workspace:*
         version: link:../shared
+
+  packages/runtime-test: {}
 
   packages/shared: {}
 

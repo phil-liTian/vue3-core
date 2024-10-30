@@ -11,7 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "@vue/reactivity": "workspace:*",
-    "@vue/shared": "workspace:*"
+    "@vue/shared": "workspace:*",
+    "@vue/runtime-test": "workspace:*"
   },
   "devDependencies": {
   }

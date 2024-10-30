@@ -1,3 +1,8 @@
+### 概述（核心要素）
+1. 提升用户开发体验 warn函数会告诉开发者问题出现的地方。而不会直接抛出js层面的错误。帮助开发者快速的定位到问题。
+2. 控制代码体积。通过 __DEV__ 控制开发环境和生产环境的包体积。在生产环境中会去掉不会执行的dead code。实现在开发环境中提供友好的提示，生产环境中不会出现警告。
+3. 良好的tree-shaking支持。需要使用esm模块语法。如果一个函数没有副作用，切在系统中无导出的时候，该方法就不会打包到最终的生产环境的包中。/*@__PURE__*/
+
 ### 响应式原理
 
 #### reactive函数
@@ -26,7 +31,7 @@
 - 可实现监听响应式对象变化，当响应式对象发生变化时，触发effect函数执行
 
 ```js
-1. scheduler 第一次执行run, 后续触发trigger, 如果有scheduler则优先执行scheduler, 否则执行run。
+1. scheduler 第一次执行run, 后续触发trigger, 如果有scheduler则优先执行scheduler, 否则执行run。(调度函数)
 2. stop 停止监听，不再触发effect函数执行。在effect上反向收集deps, 当执行stop时, 通过effect找到Dep上面的clean方法, 清除targetMap中的当前target。
 3. 不监听Symbol原型上的属性作为key的对象变化, builtInSymbols找到当前Symbol上的所有属性名
 ```
@@ -36,7 +41,7 @@
 - 接受一个内部值，返回一个响应式的、可更改的 ref 对象，此对象只有一个指向其内部值的属性 .value
 
 ```js
-1. ref createRef通过RefImpl类实现一个响应式对象, get时收集依赖, set时触发依赖。(通过调用Dep里面的trigger、track方法)
+1. ref createRef通过RefImpl类实现一个响应式对象, get时收集依赖, set时触发依赖。(通过调用Dep里面的trigger、track方法). computed和watch都深度依赖这个函数。
 2. isRef 在RefImpl类中添加IS_REF标识。
 3. unRef 当传入的参数为ref对象时，返回ref对象内部的value值，否则返回本身。
 4. toRef 将一个对象转化成响应式对象, 如果带转化对象本身是reactive, 则这个对象与原本的对象变化保持一致。参数可以是对象ObjectRefImpl保持原来对象的响应式 或者函数 GetterRefImpl 不可编辑
@@ -71,11 +76,18 @@ export class Link {
 }
 ```
 
+#### watch
+1. 可以监听的source类型
+2. callback 的参数可以有哪些 如何实现
+3. options 可有哪些配置项
+```js
+
+```
+
 ### runtime-core 运行时核心
 
 主要流程
 ```js
-// TODO 优化 自定义渲染器
 function createApp(rootComponent) {
   return {
     mount(rootContainer) {
