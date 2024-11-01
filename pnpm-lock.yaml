@@ -54,7 +54,11 @@ importers:
         specifier: workspace:*
         version: link:../shared
 
-  packages/runtime-test: {}
+  packages/runtime-test:
+    dependencies:
+      '@vue/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/shared: {}
 

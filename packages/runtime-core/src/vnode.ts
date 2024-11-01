@@ -1,7 +1,8 @@
 import { isObject, isString, ShapeFlags } from '@vue/shared'
-import { Data } from './component'
+import { Component, Data } from './component'
 import { warn } from '@vue/reactivity/src/warning'
-export type VNodeTypes = string
+import { RenderElement, RenderNode } from './renderer'
+export type VNodeTypes = string | Component
 
 export type VNodeNormalizedChildren = string
 
@@ -9,12 +10,14 @@ export type VNodeProps = {}
 
 export const Comment: Symbol = Symbol.for('v-cmt')
 
-export interface VNode {
+export interface VNode<HostNode = RenderNode, HostElement = RenderElement> {
   __v_isVNode: true // 用于区分是否是vnode
-  type: VNodeTypes
+  type: VNodeTypes // 类型
   props: VNodeProps | null
   children: VNodeNormalizedChildren
   shapeFlag: number
+  key: null | PropertyKey
+  el: HostNode | null
 }
 
 export function isVNode(value: any): value is VNode {
@@ -34,6 +37,7 @@ function createBaseVNode(type, props, children, shapeFlag): VNode {
     props,
     children,
     shapeFlag,
+    key: props?.key,
   } as VNode
 
   if (children) {
@@ -60,9 +64,13 @@ function _createVNode(
       ? ShapeFlags.STATEFUL_COMPONENT
       : 0
 
-  if (isObject(children) && (shapeFlag & ShapeFlags.STATEFUL_COMPONENT)) {
+  if (isObject(children) && shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     shapeFlag |= ShapeFlags.SLOTS_CHILDREN
   }
 
   return createBaseVNode(type, props, children, shapeFlag)
+}
+
+export function isSameVNodeType(n1, n2) {
+  return n1.type === n2.type && n1.key === n2.key
 }

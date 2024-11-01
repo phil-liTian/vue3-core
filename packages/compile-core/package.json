@@ -1,5 +1,5 @@
 {
-  "name": "@vue/runtime-test",
+  "name": "@vue/compile-core",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -8,8 +8,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "@vue/shared": "workspace:*"
-  }
+  "description": ""
 }

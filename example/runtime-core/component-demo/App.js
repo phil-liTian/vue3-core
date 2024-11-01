@@ -1,4 +1,4 @@
-import { h, ref } from "../../../lib/vue-core.esm.js"
+import { h, ref, getCurrentInstance } from "../../../lib/vue-core.esm.js"
 import { Child } from "./Child.js"
 import { Foo } from "./Foo.js"
 
@@ -7,9 +7,15 @@ export const App = {
   name: 'App',
   setup() {
     const a = ref(1)
+  
 
     const handleClick= () => {
-      a.value++
+      // a.value++
+      for(let i = 0; i < 100; i++) {
+        a.value++
+      }
+      console.log('getCurrentInstance', getCurrentInstance());
+      
     }
 
     const handleChangeMsg = () => {

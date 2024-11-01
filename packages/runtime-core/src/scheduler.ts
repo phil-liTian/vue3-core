@@ -5,6 +5,8 @@ export interface SchedulerJob extends Function {
 }
 
 let queue: SchedulerJob[] = []
+let isFlushing = false
+let isFlushPending = false
 
 export type SchedulerJobs = SchedulerJob | SchedulerJob[]
 export function nextTick<T = void, R = void>(this, fn) {
@@ -20,4 +22,18 @@ export function queueJob(job: SchedulerJob) {
   }
 }
 
-function queueFlush() {}
+function queueFlush() {
+  if (!isFlushing && !isFlushPending) {
+    isFlushPending = true
+    resolvedPromise.then(flushJobs)
+  }
+}
+
+function flushJobs() {
+  isFlushPending = false
+  isFlushing = true
+  for (let i = 0; i < queue.length; i++) {
+    queue[i]()
+    isFlushing = false
+  }
+}

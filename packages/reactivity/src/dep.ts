@@ -3,7 +3,6 @@ import { TrackOpTypes, TriggerOpTypes } from './constant'
 import {
   activeEffect,
   shouldTrack,
-  effect,
   EffectFlags,
   endBatch,
   Subscriber,

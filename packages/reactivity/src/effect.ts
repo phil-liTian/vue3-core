@@ -1,5 +1,5 @@
 import { extend, hasChanged } from '@vue/shared'
-import { globalVersion, Link } from './dep'
+import { globalVersion, type Link } from './dep'
 import { ComputedRefImpl } from './computed'
 import { activeEffectScope } from './effectScope'
 

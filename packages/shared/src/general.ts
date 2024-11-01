@@ -1,6 +1,7 @@
 export const NOOP = (): void => {}
 
 export const EMPTY_OBJ = {}
+export const EMPTY_ARR = []
 // 判断是否是对象类型
 export const isObject = (val: unknown): boolean =>
   val !== null && typeof val === 'object'

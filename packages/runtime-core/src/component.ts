@@ -11,13 +11,27 @@ export interface ComponentInternalInstance {
   type: Component
   provides: Data
   parent: ComponentInternalInstance | null
+
+  component: any
+
+  subTree: VNode | null
+  next: VNode | null
+
+  // state
+  setupState: Data
+  props: Data
+  slots: Data
+
+  update: () => void
+
+  isMounted: boolean
 }
 
 export type Component = {}
 
 // 添加parent 需要用到父级组件中提供的数据, provide/inject
 export function createComponentInstance(vnode, parent) {
-  const instance = {
+  const instance: ComponentInternalInstance = {
     vnode,
     type: vnode.type,
     setupState: {},
@@ -27,6 +41,11 @@ export function createComponentInstance(vnode, parent) {
     component: null,
     slots: {},
     next: null,
+    subTree: null,
+
+    update: null!,
+
+    isMounted: false,
   }
 
   return instance
