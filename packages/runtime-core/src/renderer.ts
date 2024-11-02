@@ -1,4 +1,10 @@
-import { EMPTY_ARR, EMPTY_OBJ, isOn, ShapeFlags } from '@vue/shared'
+import {
+  EMPTY_ARR,
+  EMPTY_OBJ,
+  invokeArrayFns,
+  isOn,
+  ShapeFlags,
+} from '@vue/shared'
 import { effect } from '@vue/reactivity'
 import {
   ComponentInternalInstance,
@@ -178,33 +184,45 @@ function baseCreateRenderer(options: RendererOptions) {
     container: RenderElement,
     anchor: RenderNode | null,
   ) {
-    instance.update = effect(
-      () => {
-        if (!instance.isMounted) {
-          const subTree = instance.render!.call(instance.proxy)
-
-          patch(null, subTree, container, anchor, instance)
-          instance.isMounted = true
-          instance.subTree = subTree
-        } else {
-          const { next, vnode } = instance
-
-          // 组件更新逻辑
-          if (next) {
-            next.el = vnode.el
-            updateComponentPreRender(instance, next)
-          }
-
-          const prevTree = instance.subTree || null
-          const subTree = instance.render!.call(instance.proxy)
-
-          patch(prevTree, subTree, container, anchor, instance)
-          instance.subTree = subTree
-          initialVNode.el = subTree.el
+    const compontUpdateFn = () => {
+      if (!instance.isMounted) {
+        const { bm, m } = instance
+        if (bm) {
+          // 在组件渲染成真实dom之前执行, 即patch之前执行
+          invokeArrayFns(bm)
         }
-      },
-      { scheduler: () => queueJob(instance.update) },
-    )
+
+        const subTree = instance.render!.call(instance.proxy)
+
+        patch(null, subTree, container, anchor, instance)
+
+        if (m) {
+          // TODO 这里需要注意的是: mounted需要在scheduler运行结束之后执行
+        }
+
+        instance.isMounted = true
+        instance.subTree = subTree
+      } else {
+        const { next, vnode } = instance
+
+        // 组件更新逻辑
+        if (next) {
+          next.el = vnode.el
+          updateComponentPreRender(instance, next)
+        }
+
+        const prevTree = instance.subTree || null
+        const subTree = instance.render!.call(instance.proxy)
+
+        patch(prevTree, subTree, container, anchor, instance)
+        instance.subTree = subTree
+        initialVNode.el = subTree.el
+      }
+    }
+
+    instance.update = effect(compontUpdateFn, {
+      scheduler: () => queueJob(instance.update),
+    })
   }
 
   function updateComponentPreRender(instance, nextVNode) {

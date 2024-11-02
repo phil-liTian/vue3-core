@@ -48,3 +48,9 @@ export const hasChanged = (value: any, oldValue: any): boolean =>
   !Object.is(value, oldValue)
 
 export const isOn = (key: string): boolean => /^on[A-Z]/.test(key)
+
+export const invokeArrayFns = (fns: Function[], ...args: any[]) => {
+  for (let i = 0; i < fns.length; i++) {
+    fns[i](...args)
+  }
+}

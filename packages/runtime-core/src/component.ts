@@ -6,6 +6,10 @@ import {
   PublicInstanceProxyHandlers,
 } from './componentPublicInstance'
 import { VNode } from './vnode'
+import { LifecycleHooks } from './enums'
+import { SchedulerJob } from './scheduler'
+
+export type LifecycleHook<TFn = Function> = (SchedulerJob[] & TFn) | null
 
 export type Data = Record<string, unknown>
 
@@ -35,6 +39,10 @@ export interface ComponentInternalInstance {
   update: () => void
 
   isMounted: boolean
+
+  // apiLifeCycle
+  [LifecycleHooks.BEFORE_MOUNT]: LifecycleHook
+  [LifecycleHooks.MOUNTED]: LifecycleHook
 }
 
 export type Component = {}
@@ -58,6 +66,10 @@ export function createComponentInstance(vnode, parent) {
     update: null!,
 
     isMounted: false,
+
+    // api hooks
+    bm: null,
+    m: null,
   }
 
   return instance
