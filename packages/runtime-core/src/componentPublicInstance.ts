@@ -1,3 +1,7 @@
+export type ComponentPublicInstance<TypeEl extends Element = any> = {
+  $el: TypeEl
+}
+
 export const PublicPropertiesMap = {
   $el: i => i.vnode.el,
   $props: i => i.props,

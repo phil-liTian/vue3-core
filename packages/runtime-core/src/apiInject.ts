@@ -1,9 +1,13 @@
 import { currentInstance } from './component'
 
-export type InjectionKey = Symbol | string
+interface InjectionConstraint<T> {}
+export type InjectionKey<T> = Symbol & InjectionConstraint<T>
 
 // 实现跨级组件通讯
-export function provide(key, value) {
+export function provide<T, K = InjectionKey<T> | string | number>(
+  key: K,
+  value: K extends InjectionKey<infer V> ? V : T,
+): void {
   if (!currentInstance) {
     return
   }
@@ -20,7 +24,7 @@ export function provide(key, value) {
     provides = currentInstance.provides = Object.create(parentProvides)
   }
 
-  provides[key] = value
+  provides[key as string] = value
 }
 
 export function inject(key, defaultValue) {

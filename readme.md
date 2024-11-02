@@ -86,7 +86,7 @@ export class Link {
 
 ### runtime-core 运行时核心
 
-主要流程
+基本流程
 ```js
 function createApp(rootComponent) {
   return {
@@ -209,16 +209,18 @@ function mountChildren (children, container) {
 
 ```
 
-重要知识点笔记
-```
-1. 如何实现组件代理对象(在render中可通过this访问setup中返回的data、$el、 $slots)
-
-2. 如何实现provide/inject？
-
-3. 如何实现自定义渲染器？(依赖runtime-core)
-
-4. 如果实现updateElement，需要如何处理children？
-
-5. nextTick实现原理: Promise.resolve().then(flushJobs)
+```js
+1. 实现组件代理对象 componentPublicInstance,可以在render函数中通过this访问到$el, $props, $slots等
+2. 实现跨级组件通讯, provide/inject,使用parentComponent来获取到父级组件prvides提供的属性, 利用原型链的思想
+3. 实现customRender实现自定义渲染器,通过runtime-dom中的api给renderer函数动态传参, 从而实现可在不同平台使用runtime-core中的逻辑，纯js逻辑
+4. 双端对比diff算法, 使用i(共同的下标索引)、e1(n1的children的长度)、e2(n1的children的长度)，来动态锁定中间乱序的部分
+  4.1 优化点1: 使用keyToNewIndexMap实现时间复杂度从o(n^2)降低到o(n)
+  4.2 优化点2: 比较patch和tobePatched, 如果tobenPatched>patch,则说明后面的节点是需要删除的，无需继续比较了
+  4.3 优化点3: 增加moved和maxNewIndexSoFar，比较当前的index和maxNewIndexSoFar， 如果maxNewIndexSoFar>index，说明当前节点需要移动，否则不需要移动。
+  4.4 优化点4: 获取到newIndexToOldIndexMap的最长递增子序列, 来实现来中间乱序部分的移动
+  4.5 优化点5: j < 0, 则节点需要移动
+5. 实现slots, 具名插槽、作用域插槽以及默认插槽。SLOT_CHIDLREN 标识符,如果父级组件的是一个STATEFUL_COMPONENT，children是一个object类型，则认为是一个slot, renderSlot可处理具体内容
+6. h函数是对createVNode函数的一个补充，第二个参数可以是props或者是children, 在h函数中已对其进行处理。另外，h函数的参数可以大于3个,从第三个参数开始，后续的参数都认为是children。
+6. nextTick实现原理: Promise.resolve().then(flushJobs)， 本质上就是一个异步任务，当执行完当前任务后，再执行flushJobs
 ```
 

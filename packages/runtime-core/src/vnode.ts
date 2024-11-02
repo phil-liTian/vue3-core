@@ -1,5 +1,5 @@
 import { isObject, isString, ShapeFlags } from '@vue/shared'
-import { Component, Data } from './component'
+import { Component, ComponentInternalInstance, Data } from './component'
 import { warn } from '@vue/reactivity/src/warning'
 import { RenderElement, RenderNode } from './renderer'
 export type VNodeTypes = string | Component
@@ -18,6 +18,7 @@ export interface VNode<HostNode = RenderNode, HostElement = RenderElement> {
   shapeFlag: number
   key: null | PropertyKey
   el: HostNode | null
+  component: ComponentInternalInstance | null
 }
 
 export function isVNode(value: any): value is VNode {
@@ -54,7 +55,7 @@ export const createVNode = _createVNode as typeof _createVNode
 
 // internal createVNode
 function _createVNode(
-  type,
+  type: VNodeTypes,
   props: Data | null = null,
   children: unknown = null,
 ): VNode {

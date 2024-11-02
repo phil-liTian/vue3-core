@@ -1,10 +1,18 @@
 import { proxyRefs } from '@vue/reactivity'
 import { initProps } from './componentProps'
 import { initSlots } from './componentSlots'
-import { PublicInstanceProxyHandlers } from './componentPublicInstance'
+import {
+  ComponentPublicInstance,
+  PublicInstanceProxyHandlers,
+} from './componentPublicInstance'
 import { VNode } from './vnode'
 
 export type Data = Record<string, unknown>
+
+export type VNodeChildren = any
+export interface InternalRenderFunction {
+  (): VNodeChildren
+}
 
 export interface ComponentInternalInstance {
   vnode: VNode
@@ -14,6 +22,7 @@ export interface ComponentInternalInstance {
 
   component: any
 
+  render: InternalRenderFunction | null
   subTree: VNode | null
   next: VNode | null
 
@@ -21,6 +30,7 @@ export interface ComponentInternalInstance {
   setupState: Data
   props: Data
   slots: Data
+  proxy: ComponentPublicInstance | null
 
   update: () => void
 
@@ -40,8 +50,10 @@ export function createComponentInstance(vnode, parent) {
     parent,
     component: null,
     slots: {},
+    render: null,
     next: null,
     subTree: null,
+    proxy: null,
 
     update: null!,
 

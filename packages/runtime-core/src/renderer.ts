@@ -1,6 +1,10 @@
 import { EMPTY_ARR, EMPTY_OBJ, isOn, ShapeFlags } from '@vue/shared'
 import { effect } from '@vue/reactivity'
-import { createComponentInstance, setupComponent } from './component'
+import {
+  ComponentInternalInstance,
+  createComponentInstance,
+  setupComponent,
+} from './component'
 import { createVNode, isSameVNodeType, VNode } from './vnode'
 import { queueJob } from './scheduler'
 
@@ -9,6 +13,14 @@ export interface RenderNode {
 }
 
 export interface RenderElement extends RenderNode {}
+
+type PatchFn = (
+  n1: VNode | null,
+  n2: VNode,
+  container: RenderElement,
+  anchor?: RenderNode | null,
+  parentComponent?: ComponentInternalInstance | null,
+) => void
 
 export interface RendererOptions<
   HostNode = RenderNode,
@@ -38,7 +50,13 @@ function baseCreateRenderer(options: RendererOptions) {
     patch(null, vnode, container, null, parentComponent)
   }
 
-  function patch(n1, vnode: any, container: any, anchor, parentComponent) {
+  const patch: PatchFn = (
+    n1,
+    vnode,
+    container,
+    anchor = null,
+    parentComponent = null,
+  ) => {
     if (vnode.shapeFlag & ShapeFlags.ELEMENT) {
       processElement(n1, vnode, container, anchor, parentComponent)
     } else {
@@ -48,10 +66,10 @@ function baseCreateRenderer(options: RendererOptions) {
 
   function processComponent(
     n1: VNode | null,
-    n2: any,
-    container: any,
-    anchor,
-    parentComponent,
+    n2: VNode,
+    container: RenderElement,
+    anchor: RenderNode | null,
+    parentComponent: ComponentInternalInstance | null,
   ) {
     if (n1 === null) {
       // 如果没有n1 说明是挂载组件
@@ -62,7 +80,13 @@ function baseCreateRenderer(options: RendererOptions) {
     }
   }
 
-  function processElement(n1, vnode, container, anchor, parentComponent) {
+  function processElement(
+    n1: VNode | null,
+    vnode: VNode,
+    container: RenderElement,
+    anchor: RenderNode | null,
+    parentComponent: ComponentInternalInstance | null,
+  ) {
     if (n1 === null) {
       mountElement(vnode, container, anchor, parentComponent)
     } else {
@@ -71,8 +95,13 @@ function baseCreateRenderer(options: RendererOptions) {
     }
   }
 
-  function mountElement(vnode, container, anchor, parentComponent) {
-    const el = (vnode.el = hostCreateElement(vnode.type))
+  function mountElement(
+    vnode: VNode,
+    container: RenderElement,
+    anchor: RenderNode | null,
+    parentComponent: ComponentInternalInstance | null,
+  ) {
+    const el = (vnode.el = hostCreateElement(vnode.type as string))
 
     if (vnode.shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       // 注意这里的container 应该是el才对, 这样children中的元素才能正确的渲染到parentComponent中
@@ -93,7 +122,13 @@ function baseCreateRenderer(options: RendererOptions) {
   }
 
   // 如何更新element
-  function patchElement(n1, n2, container, anchor, parentComponent) {
+  function patchElement(
+    n1: VNode,
+    n2: VNode,
+    container: RenderElement,
+    anchor: RenderNode | null,
+    parentComponent: ComponentInternalInstance | null,
+  ) {
     const el = (n2.el = n1.el)
 
     const oldProps = n1.props || EMPTY_OBJ
@@ -116,7 +151,12 @@ function baseCreateRenderer(options: RendererOptions) {
     })
   }
 
-  function mountComponent(vnode: any, container: any, anchor, parentComponent) {
+  function mountComponent(
+    vnode: VNode,
+    container: RenderElement,
+    anchor: RenderNode | null,
+    parentComponent: ComponentInternalInstance | null,
+  ) {
     const instance = (vnode.component = createComponentInstance(
       vnode,
       parentComponent,
@@ -126,22 +166,22 @@ function baseCreateRenderer(options: RendererOptions) {
     setupRenderEffect(instance, instance.vnode, container, anchor)
   }
 
-  function updateComponent(n1, n2) {
+  function updateComponent(n1: VNode, n2: VNode) {
     const instance = (n2.component = n1.component)
     instance.update()
     instance.next = n2
   }
 
   function setupRenderEffect(
-    instance: any,
-    initialVNode,
-    container: any,
-    anchor,
+    instance: ComponentInternalInstance,
+    initialVNode: VNode,
+    container: RenderElement,
+    anchor: RenderNode | null,
   ) {
     instance.update = effect(
       () => {
         if (!instance.isMounted) {
-          const subTree = instance.render.call(instance.proxy)
+          const subTree = instance.render!.call(instance.proxy)
 
           patch(null, subTree, container, anchor, instance)
           instance.isMounted = true
@@ -156,7 +196,7 @@ function baseCreateRenderer(options: RendererOptions) {
           }
 
           const prevTree = instance.subTree || null
-          const subTree = instance.render.call(instance.proxy)
+          const subTree = instance.render!.call(instance.proxy)
 
           patch(prevTree, subTree, container, anchor, instance)
           instance.subTree = subTree
