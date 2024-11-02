@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   flushPreFlushCbs,
   nextTick,
   queueJob,
+  queuePostFlushCb,
   SchedulerJob,
   SchedulerJobFlags,
 } from '../src/scheduler'
@@ -233,6 +234,36 @@ describe('scheduler', () => {
       queueJob(job1)
       await nextTick()
       expect(calls).toEqual(['cb1', 'cb2', 'job1'])
+    })
+
+    it('没有id的job, 应该插入到数组的前面', async () => {
+      const calls: string[] = []
+      const job1: SchedulerJob = () => {
+        calls.push('job1')
+      }
+      job1.flags! |= SchedulerJobFlags.PRE
+
+      const job2: SchedulerJob = () => {
+        calls.push('job2')
+      }
+      job2.id = 1
+      job2.flags! |= SchedulerJobFlags.PRE
+
+      queueJob(job1)
+      queueJob(job2)
+      await nextTick()
+      expect(calls).toEqual(['job1', 'job2'])
+    })
+
+    // TODO
+    it('在queuePostFlushCb中执行queueJob', async () => {
+      const spy = vi.fn()
+      const cb: SchedulerJob = () => spy()
+      cb.flags! |= SchedulerJobFlags.PRE
+      // queuePostFlushCb(() => queueJob(cb))
+      queueJob(cb)
+      await nextTick()
+      expect(spy).toHaveBeenCalled()
     })
   })
 })

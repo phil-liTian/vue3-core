@@ -1,3 +1,5 @@
+import { isArray } from '@vue/shared'
+
 const resolvedPromise = Promise.resolve() as Promise<any>
 
 export enum SchedulerJobFlags {
@@ -67,6 +69,12 @@ function queueFlush() {
     isFlushPending = true
     resolvedPromise.then(flushJobs)
   }
+}
+
+export function queuePostFlushCb(cb: SchedulerJobs): void {
+  if (!isArray(cb)) {
+  }
+  // queueFlush()
 }
 
 function flushJobs() {

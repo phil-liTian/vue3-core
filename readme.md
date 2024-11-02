@@ -221,6 +221,10 @@ function mountChildren (children, container) {
   4.5 优化点5: j < 0, 则节点需要移动
 5. 实现slots, 具名插槽、作用域插槽以及默认插槽。SLOT_CHIDLREN 标识符,如果父级组件的是一个STATEFUL_COMPONENT，children是一个object类型，则认为是一个slot, renderSlot可处理具体内容
 6. h函数是对createVNode函数的一个补充，第二个参数可以是props或者是children, 在h函数中已对其进行处理。另外，h函数的参数可以大于3个,从第三个参数开始，后续的参数都认为是children。
-6. nextTick实现原理: Promise.resolve().then(flushJobs)， 本质上就是一个异步任务，当执行完当前任务后，再执行flushJobs
+7. scheduler:
+  7.1 nextTick: 本质就是创建一个微任务, nextTick中的回调函数会在Promise.resolve中执行 
+  7.2 queueJob: SchedulerJob 可以有id和Flags属性, id越小越靠前执行, flags为pre的先执行.寻找job的插入位置时findInsertionIndex用到二分查找。
+
+// nextTick实现原理: Promise.resolve().then(flushJobs)， 本质上就是一个异步任务，当执行完当前任务后，再执行flushJobs
 ```
 
