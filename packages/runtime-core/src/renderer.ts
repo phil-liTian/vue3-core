@@ -13,6 +13,7 @@ import {
 } from './component'
 import { createVNode, isSameVNodeType, VNode } from './vnode'
 import { queueJob } from './scheduler'
+import { createAppAPI } from './apiCreateApp'
 
 export interface RenderNode {
   [key: string | symbol]: any
@@ -174,8 +175,8 @@ function baseCreateRenderer(options: RendererOptions) {
 
   function updateComponent(n1: VNode, n2: VNode) {
     const instance = (n2.component = n1.component)
-    instance.update()
-    instance.next = n2
+    instance!.update()
+    instance!.next = n2
   }
 
   function setupRenderEffect(
@@ -471,14 +472,16 @@ function baseCreateRenderer(options: RendererOptions) {
 
   return {
     render,
-    createApp: rooterComponent => {
-      return {
-        mount: container => {
-          const vnode = createVNode(rooterComponent)
-          render(vnode, container, null)
-        },
-      }
-    },
+    createApp: createAppAPI(render),
+
+    // rooterComponent => {
+    //   return {
+    //     mount: container => {
+    //       const vnode = createVNode(rooterComponent)
+    //       render(vnode, container, null)
+    //     },
+    //   }
+    // },
   }
 }
 

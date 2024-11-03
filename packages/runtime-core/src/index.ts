@@ -1,4 +1,7 @@
 // export * from './createApp'
+
+export const version: string = __VERSION__
+
 export * from './h'
 
 export { getCurrentInstance } from './component'
@@ -12,3 +15,6 @@ export { nextTick } from './scheduler'
 export { createRenderer, type RendererOptions } from './renderer'
 
 export { renderSlots } from './helpers/renderSlots'
+
+// 内建组件
+export { Teleport } from './components/Teleport'

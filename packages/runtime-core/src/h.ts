@@ -6,16 +6,16 @@ type RawChildren = string | number | boolean | VNode | (() => any)
 type RawProps = Record<string, any>
 
 // type 是element类型
-export function h<K extends keyof HTMLElementTagNameMap>(
-  type: K,
-  children?: RawChildren,
-): VNode
+// export function h<K extends keyof HTMLElementTagNameMap>(
+//   type: K,
+//   children?: RawChildren,
+// ): VNode
 
-export function h<K extends keyof HTMLElementTagNameMap>(
-  type: K,
-  props?: null | RawProps,
-  children?: RawChildren,
-): VNode
+// export function h<K extends keyof HTMLElementTagNameMap>(
+//   type: K,
+//   props?: null | RawProps,
+//   children?: RawChildren,
+// ): VNode
 
 /**
  * @description 创建虚拟的dom节点, 是createVNode的简写,也丰富了createVNode的使用
