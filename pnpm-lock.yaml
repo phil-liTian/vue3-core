@@ -36,7 +36,11 @@ importers:
 
   packages/compile-core: {}
 
-  packages/compile-dom: {}
+  packages/compile-dom:
+    devDependencies:
+      '@vue/compile-core':
+        specifier: workspace:*
+        version: link:../compile-core
 
   packages/reactivity:
     dependencies:
@@ -75,6 +79,9 @@ importers:
 
   packages/vue:
     dependencies:
+      '@vue/compile-dom':
+        specifier: workspace:*
+        version: link:../compile-dom
       '@vue/reactivity':
         specifier: workspace:*
         version: link:../reactivity

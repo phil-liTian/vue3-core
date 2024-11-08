@@ -104,6 +104,29 @@ export class Link {
 8. apiLifecycle: 生命周期函数
   8.1 onBeforeMount: 在patch之前执行，需要注意的是可以注册多个onBeforeMount函数，使用invokeArrayFns来依次执行。
   8.2 onMounted: 在patch之后执行
+```
 
+
+### compile-core 编译核心
+  流程概述: 
+    parser: 对template模板进行词法分析和语法分析, 解析出ast语法树。
+    transform: 使用transform对其进行语义分析，例如检查v-else指令是否存在相符的v-if指令; 分析属性值是否是静态的、是否是常量等。
+    generate: 将javascript模板生成render函数。
+
+```js
+1. 有限自动状态机
+  使用while循环开启一个状态机, 不同的NodeTypes对应不同的处理逻辑。自动状态机本质就是对字符串中不同类型进行处理，生成一个ast树
+  Tokenizer类接收一个Callbacks, 实现Tokenizr的解耦
+
+2. transform: 将一个模板ast转换成一个javascript ast方便generate函数处理。（实现解耦节点的访问和操作，设计了插件化架构）
+  使用createTransformContext创建ast上下文, 对其children进行循环递归遍历处理。需要注意的是 在前端领域往往需要根据子节点的情况来决定当前节点如何转换。即要求父节点的转换操作需要其所有自节点全部转换后才进行。
+  此处采用的解决办法是: 使用exitFns存下遍历时的NodeTransform函数, 遍历结束后再反向执行exitFns中的函数。
+
+3. generate: 与transform的实现思路类似，创建一个全局的上下文对象, 然后对这个对象进行操作
+  返回的code就是一个拼接好的render函数. 执行后就会生成一个virtual dom, 经过patch会生成真实dom挂载到父节点上
+  push方法可实现拼接
+  indent 实现缩进
+  newLine 实现换行
+  ...
 ```
 

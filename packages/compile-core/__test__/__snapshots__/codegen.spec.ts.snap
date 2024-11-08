@@ -1,0 +1,30 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`compiler: codegen > function mode preamble 1`] = `
+"const _Vue = Vue
+return function render(_ctx, _cache) {with (_ctx)const { createVNode: _createVNode, resolveDirective: _resolveDirective } = _Vue
+
+return }"
+`;
+
+exports[`compiler: codegen > function mode preamble w/ prefixIdentifiers: true 1`] = `
+"const { createVNode: _createVNode, resolveDirective: _resolveDirective } = Vue
+return function render(_ctx, _cache) {
+return }"
+`;
+
+exports[`compiler: codegen > mode preamble 1`] = `
+"import { createVNode as _createVNode, resolveDirective as _resolveDirective } from "vue"
+function render(_ctx, _cache) {
+return }"
+`;
+
+exports[`compiler: codegen > static text 1`] = `
+"return function render(_ctx, _cache) {with (_ctx)
+return "hello"}"
+`;
+
+exports[`compiler: codegen > temps 1`] = `
+"return function render(_ctx, _cache) {with (_ctx)let _temp0, _temp1, _temp2
+return }"
+`;

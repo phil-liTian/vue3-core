@@ -3,6 +3,7 @@ import {
   EMPTY_OBJ,
   invokeArrayFns,
   isOn,
+  isString,
   ShapeFlags,
 } from '@vue/shared'
 import { effect } from '@vue/reactivity'
@@ -14,6 +15,7 @@ import {
 import { createVNode, isSameVNodeType, VNode } from './vnode'
 import { queueJob } from './scheduler'
 import { createAppAPI } from './apiCreateApp'
+import { h } from './h'
 
 export interface RenderNode {
   [key: string | symbol]: any
@@ -59,15 +61,15 @@ function baseCreateRenderer(options: RendererOptions) {
 
   const patch: PatchFn = (
     n1,
-    vnode,
+    n2,
     container,
     anchor = null,
     parentComponent = null,
   ) => {
-    if (vnode.shapeFlag & ShapeFlags.ELEMENT) {
-      processElement(n1, vnode, container, anchor, parentComponent)
+    if (n2.shapeFlag & ShapeFlags.ELEMENT) {
+      processElement(n1, n2, container, anchor, parentComponent)
     } else {
-      processComponent(n1, vnode, container, anchor, parentComponent)
+      processComponent(n1, n2, container, anchor, parentComponent)
     }
   }
 
@@ -185,7 +187,7 @@ function baseCreateRenderer(options: RendererOptions) {
     container: RenderElement,
     anchor: RenderNode | null,
   ) {
-    const compontUpdateFn = () => {
+    const componentUpdateFn = () => {
       if (!instance.isMounted) {
         const { bm, m } = instance
         if (bm) {
@@ -193,7 +195,11 @@ function baseCreateRenderer(options: RendererOptions) {
           invokeArrayFns(bm)
         }
 
-        const subTree = instance.render!.call(instance.proxy)
+        let subTree = instance.render!.call(instance.proxy)
+        // 当render函数直接返回一个字符串如何处理？？
+        if (isString(subTree)) {
+          subTree = h('div', null, subTree)
+        }
 
         patch(null, subTree, container, anchor, instance)
 
@@ -221,7 +227,7 @@ function baseCreateRenderer(options: RendererOptions) {
       }
     }
 
-    instance.update = effect(compontUpdateFn, {
+    instance.update = effect(componentUpdateFn, {
       scheduler: () => queueJob(instance.update),
     })
   }

@@ -110,8 +110,15 @@ function handleSetupResult(instance: any, setupResult: any) {
 
 function finishComponentSetup(instance: any) {
   const Component = instance.type
-  if (Component.render) {
-    instance.render = Component.render
+  if (!instance.render) {
+    if (compiler && !Component.render) {
+      // 如果有template, 优先以template为准
+      Component.render = compiler(Component.template)
+    }
+
+    if (Component.render) {
+      instance.render = Component.render
+    }
   }
 }
 export let currentInstance: ComponentInternalInstance | null = null
@@ -119,3 +126,15 @@ export let currentInstance: ComponentInternalInstance | null = null
 export const getCurrentInstance = () => currentInstance
 
 export const setCurrentInstance = instance => (currentInstance = instance)
+
+/**
+ * compiler
+ */
+type CompilerFunction = (template: string) => InternalRenderFunction
+
+let compiler: CompilerFunction | undefined
+
+// 注册compiler函数
+export function registerRuntimeCompiler(_compiler: CompilerFunction) {
+  compiler = _compiler
+}
