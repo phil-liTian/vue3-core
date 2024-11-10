@@ -100,7 +100,7 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
 
   const { push, mode, prefixIdentifiers, newline, deindent, indent } = context
   const { temps, components, directives } = ast
-  
+
   const helpers = Array.from(ast.helpers! || new Set())
   const hasHelper = helpers.length > 0
   const useWithBlock = !prefixIdentifiers && mode !== 'module'
@@ -117,8 +117,8 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
   push(`function ${functionName}(${signarture}) {`)
 
   if (useWithBlock) {
-    push(`with (_ctx) {`)
-    indent()
+    push(`with (_ctx)`)
+    // indent()
 
     if (hasHelper) {
       push(`const { ${helpers.map(aliasHelper).join(', ')} } = _Vue\n`)
@@ -156,10 +156,10 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
     genNode(ast.codegenNode, context)
   }
 
-  if ( useWithBlock ) {
-    deindent()
-    push('}')
-  }
+  // if ( useWithBlock ) {
+  //   deindent()
+  //   push('}')
+  // }
 
   push(`}`)
 
@@ -262,8 +262,6 @@ function genHoist(hoist, context) {
 
 // 处理node的核心入口函数
 function genNode(node: any, context) {
-  console.log('node', node);
-  
   switch (node.type) {
     case NodeTypes.ELEMENT:
     case NodeTypes.IF:

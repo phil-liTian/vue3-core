@@ -40,6 +40,8 @@ export function transform(
   root: RootNode,
   options: TransformOptions = {},
 ): void {
+  console.log('options', options.nodeTransforms)
+
   const context = createTransformContext(root, options)
 
   traverseNode(root, context)
@@ -59,6 +61,7 @@ export function traverseNode(
   let exitFns: any[] = []
   for (let i = 0; i < nodeTransforms.length; i++) {
     const onExit = nodeTransforms[i](node, context)
+
     if (onExit) {
       exitFns.push(onExit)
     }
@@ -73,7 +76,6 @@ export function traverseNode(
       break
     }
   }
-  
 
   let i = exitFns.length
   while (i--) {

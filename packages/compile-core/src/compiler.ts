@@ -2,15 +2,29 @@ import { extend } from '../../shared'
 import { generate } from './codegen'
 import { baseParse } from './parser'
 import { transform } from './transform'
+import { transformElement } from './transforms/transfromElement'
+
+export function getBaseTransformPreset() {
+  return [[transformElement]]
+}
 
 export function baseCompiler(source) {
   const ast = baseParse(source)
 
-  const resolvedOptions = extend({}, {
-    prefixIdentifiers: true,
-  })
+  const [nodeTransforms] = getBaseTransformPreset()
 
-  transform(ast, extend({}, resolvedOptions))
+  const resolvedOptions = extend(
+    {},
+    {
+      prefixIdentifiers: true,
+    },
+  )
 
+  transform(
+    ast,
+    extend({}, resolvedOptions, {
+      nodeTransforms: [...nodeTransforms],
+    }),
+  )
   return generate(ast, resolvedOptions)
 }

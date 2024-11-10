@@ -83,14 +83,14 @@ describe('compile: parse', () => {
           isStatic: false,
           loc: {
             start: { offset: 2, line: 1, column: 3 },
-            end: { offset: 9, line: 1, column:10 },
-          }
+            end: { offset: 9, line: 1, column: 10 },
+          },
         },
         loc: {
           start: { offset: 0, line: 1, column: 1 },
           end: { offset: 11, line: 1, column: 12 },
           source: '{{message}}',
-        }
+        },
       })
     })
   })

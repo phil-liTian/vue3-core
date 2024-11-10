@@ -128,5 +128,7 @@ export class Link {
   indent 实现缩进
   newLine 实现换行
   ...
+
+4. vue约定: 运行时核心可以独立与编译器运行。这就要求在runtime-core中，不可直接引入compiler-core中的内容。采用的解决方法是，在vue主包中定义一个方法compileToFunction,运行时核心中定义registerRuntimeCompiler方法, 在运行时核心中finishComponentSetup时判断是否有当前compiler, 就调用编译器返回的render函数。需要注意的是render函数比编译器返回的render函数优先级要高！
 ```
 

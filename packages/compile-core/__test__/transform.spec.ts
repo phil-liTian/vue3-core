@@ -32,7 +32,7 @@ describe('compiler: transform', () => {
       div,
       {
         parent: ast,
-        currentNode: div
+        currentNode: div,
       },
     ])
 
@@ -40,7 +40,7 @@ describe('compiler: transform', () => {
       div.children[0],
       {
         parent: div,
-        currentNode: div.children[0]
+        currentNode: div.children[0],
       },
     ])
 
@@ -48,7 +48,7 @@ describe('compiler: transform', () => {
       div.children[1],
       {
         parent: div,
-        currentNode: div.children[1]
+        currentNode: div.children[1],
       },
     ])
   })
