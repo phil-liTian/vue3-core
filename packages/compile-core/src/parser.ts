@@ -1,9 +1,12 @@
 import {
+  ConstantTypes,
   createRoot,
   ElementNode,
   ElementTypes,
   NameSpaces,
   NodeTypes,
+  SimpleExpressionNode,
+  SourceLocation,
 } from './ast'
 import Tokenizer, { CharCodes } from './tokenizer'
 
@@ -21,8 +24,15 @@ const tokenizer = new Tokenizer(stack, {
 
   // 处理插值
   oninterpolation(start, end) {
+
+    const innerStart = start + tokenizer.delimiterOpen.length
+    const innerEnd = end - tokenizer.delimiterClose.length
+    let exp = getSlice(innerStart, innerEnd)
+
     addNode({
       type: NodeTypes.INTERPOLATION,
+      loc: getLoc(start, end),
+      content: createExp(exp, false, getLoc(innerStart, innerEnd))
     })
   },
 
@@ -86,6 +96,15 @@ function condenseWhitespace(nodes) {
   return nodes
 }
 
+function createExp(content: SimpleExpressionNode['content'], isStatic: SimpleExpressionNode['isStatic'], loc: SourceLocation, constType: ConstantTypes = ConstantTypes.NOT_CONSTANT) {
+  return {
+    type: NodeTypes.SIMPLE_EXPRESSION,
+    content,
+    isStatic,
+    loc
+  }
+}
+
 function reset() {
   tokenizer.reset()
 }
@@ -114,7 +133,7 @@ function onText(content, start, end) {
 
 // 添加节点
 function addNode(node) {
-  currentRoot.children.push(node)
+  (stack[0]|| currentRoot).children.push(node)
 }
 
 function endOpenTag(end) {

@@ -98,10 +98,10 @@ function createCodegenContext(
 export function generate(ast: RootNode, options: CodegenOptions = {}) {
   const context = createCodegenContext(ast, options)
 
-  const { push, mode, prefixIdentifiers, newline } = context
+  const { push, mode, prefixIdentifiers, newline, deindent, indent } = context
   const { temps, components, directives } = ast
-
-  const helpers = Array.from(ast.helpers!)
+  
+  const helpers = Array.from(ast.helpers! || new Set())
   const hasHelper = helpers.length > 0
   const useWithBlock = !prefixIdentifiers && mode !== 'module'
 
@@ -117,7 +117,8 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
   push(`function ${functionName}(${signarture}) {`)
 
   if (useWithBlock) {
-    push(`with (_ctx)`)
+    push(`with (_ctx) {`)
+    indent()
 
     if (hasHelper) {
       push(`const { ${helpers.map(aliasHelper).join(', ')} } = _Vue\n`)
@@ -153,6 +154,11 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
   // 如何生成的codegenNode??? transform??
   if (ast.codegenNode) {
     genNode(ast.codegenNode, context)
+  }
+
+  if ( useWithBlock ) {
+    deindent()
+    push('}')
   }
 
   push(`}`)
@@ -197,7 +203,7 @@ function genFunctionPreamble(ast: RootNode, context) {
   } = context
   const {} = ast
 
-  const helper = Array.from(ast.helpers!)
+  const helper = Array.from(ast.helpers! || new Set())
   if (helper.length) {
     if (prefixIdentifiers) {
       // 将导入语句放到整个函数块之前
@@ -256,6 +262,8 @@ function genHoist(hoist, context) {
 
 // 处理node的核心入口函数
 function genNode(node: any, context) {
+  console.log('node', node);
+  
   switch (node.type) {
     case NodeTypes.ELEMENT:
     case NodeTypes.IF:

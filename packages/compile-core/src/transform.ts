@@ -51,6 +51,9 @@ export function traverseNode(
   node: RootNode | TemplateChildNode,
   context: TransformContext,
 ) {
+  // 一定要在transform执行前, 赋值currentNode
+  context.currentNode = node
+
   const { nodeTransforms } = context
 
   let exitFns: any[] = []
@@ -70,9 +73,7 @@ export function traverseNode(
       break
     }
   }
-  console.log('node', node)
-
-  context.currentNode = node
+  
 
   let i = exitFns.length
   while (i--) {

@@ -93,7 +93,7 @@ export default class Tokenizer {
         }
 
         case State.InterpolationOpen: {
-          this.stateIntrpolationOpen(c)
+          this.stateInterpolationOpen(c)
           break
         }
 
@@ -148,7 +148,7 @@ export default class Tokenizer {
       this.delimiterIndex = 0
       // 发现插值的第一个字符, 则开始处理分割符，当前第一次delimiterIndex不可能等于this.delimiterOpen.length - 1
       // 此时状态仍然是InterpolationOpen, 下一次执行时会匹配到第二个分割符，进入Interpolation状态
-      this.stateIntrpolationOpen(c)
+      this.stateInterpolationOpen(c)
     } else if (c === CharCodes.Lt) {
       if (this.index > this.sectionStart) {
         this.cbs.ontext(this.sectionStart, this.index)
@@ -160,7 +160,7 @@ export default class Tokenizer {
   }
 
   // 处理分割符, 开始标志
-  private stateIntrpolationOpen(c: number): void {
+  private stateInterpolationOpen(c: number): void {
     if (c === this.delimiterOpen[this.delimiterIndex]) {
       if (this.delimiterIndex === this.delimiterOpen.length - 1) {
         // {
@@ -199,7 +199,7 @@ export default class Tokenizer {
         //   this.cbs.ontext(this.sectionStart, start)
         // }
         // 收集到插值中间的内容
-        this.cbs.oninterpolation(this.sectionStart, this.index)
+        this.cbs.oninterpolation(this.sectionStart, this.index + 1)
 
         this.state = State.Text
         this.sectionStart = this.index + 1

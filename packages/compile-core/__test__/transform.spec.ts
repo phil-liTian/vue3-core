@@ -32,7 +32,23 @@ describe('compiler: transform', () => {
       div,
       {
         parent: ast,
-        // currentNode: div
+        currentNode: div
+      },
+    ])
+
+    expect(calls[2]).toMatchObject([
+      div.children[0],
+      {
+        parent: div,
+        currentNode: div.children[0]
+      },
+    ])
+
+    expect(calls[3]).toMatchObject([
+      div.children[1],
+      {
+        parent: div,
+        currentNode: div.children[1]
       },
     ])
   })

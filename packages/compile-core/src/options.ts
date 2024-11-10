@@ -3,6 +3,9 @@ import { NodeTransform } from './transform'
 // 定义transtorm 的选项
 export interface TransformOptions {
   nodeTransforms?: NodeTransform[]
+
+
+  prefixIdentifiers?: boolean
 }
 
 // 定义generate 的选项

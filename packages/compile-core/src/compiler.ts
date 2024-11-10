@@ -1,3 +1,4 @@
+import { extend } from '../../shared'
 import { generate } from './codegen'
 import { baseParse } from './parser'
 import { transform } from './transform'
@@ -5,7 +6,11 @@ import { transform } from './transform'
 export function baseCompiler(source) {
   const ast = baseParse(source)
 
-  transform(ast)
+  const resolvedOptions = extend({}, {
+    prefixIdentifiers: true,
+  })
 
-  return generate(ast)
+  transform(ast, extend({}, resolvedOptions))
+
+  return generate(ast, resolvedOptions)
 }

@@ -3,6 +3,7 @@ import { baseParse } from '../src/parser'
 import {
   ElementNode,
   ElementTypes,
+  InterpolationNode,
   NameSpaces,
   NodeTypes,
   TextNode,
@@ -70,9 +71,29 @@ describe('compile: parse', () => {
     })
   })
 
-  // describe('Interpolation', () => {
-
-  // })
+  describe('Interpolation', () => {
+    test('simple Interpolation', () => {
+      const ast = baseParse('{{message}}')
+      const interpolation = ast.children[0] as InterpolationNode
+      expect(interpolation).toMatchObject({
+        type: NodeTypes.INTERPOLATION,
+        content: {
+          type: NodeTypes.SIMPLE_EXPRESSION,
+          content: 'message',
+          isStatic: false,
+          loc: {
+            start: { offset: 2, line: 1, column: 3 },
+            end: { offset: 9, line: 1, column:10 },
+          }
+        },
+        loc: {
+          start: { offset: 0, line: 1, column: 1 },
+          end: { offset: 11, line: 1, column: 12 },
+          source: '{{message}}',
+        }
+      })
+    })
+  })
 
   describe('Element', () => {
     test('simple div', () => {
