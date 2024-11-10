@@ -1,13 +1,30 @@
 import { describe, expect, test } from 'vitest'
 import { generate } from '../src/codegen'
-import { locStub, NodeTypes, RootNode } from '../src/ast'
 import {
+  createConditionalExpression,
+  createCallExpression,
+  createCompoundExpression,
+  createInterpolation,
+  createObjectExpression,
+  createObjectProperty,
+  createSimpleExpression,
+  locStub,
+  NodeTypes,
+  RootNode,
+} from '../src/ast'
+
+import {
+  CREATE_COMMENT,
   CREATE_VNODE,
+  FRAGMENT,
   helperNameMap,
+  RENDER_LIST,
+  RESOLVE_COMPONENT,
   RESOLVE_DIRECTIVE,
+  TO_DISPLAY_STRING,
 } from '../src/runtimeHelpers'
 
-function createRoot(options = {}) {
+function createRoot(options: Partial<RootNode> = {}): RootNode {
   return {
     type: NodeTypes.ROOT,
     source: '',
@@ -77,28 +94,60 @@ describe('compiler: codegen', () => {
     expect(code).toMatchSnapshot()
   })
 
-  test('assets + temps', () => {})
+  test('assets + temps', () => {
+    const root = createRoot({
+      components: [`Foo`, `bar-baz`, `barbaz`, `Qux__self`],
+      directives: ['my_dir_0', 'my_dir_1'],
+      temps: 3,
+    })
 
-  // test('hoists', () => {
-  //   const root = createRoot({
-  //     hoists: [
-  //       createSimpleExpression(`hello`, false, locStub),
-  //       createObjectExpression(
-  //         [
-  //           createObjectProperty(
-  //             createSimpleExpression(`id`, true, locStub),
-  //             createSimpleExpression(`foo`, true, locStub),
-  //           ),
-  //         ],
-  //         locStub,
-  //       ),
-  //     ],
-  //   })
-  //   const { code } = generate(root)
-  //   expect(code).toMatch(`const _hoisted_1 = hello`)
-  //   expect(code).toMatch(`const _hoisted_2 = { id: "foo" }`)
-  //   expect(code).toMatchSnapshot()
-  // })
+    const { code } = generate(root, { mode: 'function' })
+    expect(code).toMatch(
+      `const _component_Foo = _${helperNameMap[RESOLVE_COMPONENT]}("Foo")\n`,
+    )
+
+    expect(code).toMatch(
+      `const _component_bar_baz = _${helperNameMap[RESOLVE_COMPONENT]}("bar-baz")\n`,
+    )
+
+    expect(code).toMatch(
+      `const _component_barbaz = _${helperNameMap[RESOLVE_COMPONENT]}("barbaz")\n`,
+    )
+
+    expect(code).toMatch(
+      `const _component_Qux = _${helperNameMap[RESOLVE_COMPONENT]}("Qux", true)\n`,
+    )
+
+    expect(code).toMatch(
+      `const _directive_my_dir_0 = _${helperNameMap[RESOLVE_DIRECTIVE]}("my_dir_0")\n`,
+    )
+    expect(code).toMatch(
+      `const _directive_my_dir_1 = _${helperNameMap[RESOLVE_DIRECTIVE]}("my_dir_1")\n`,
+    )
+
+    expect(code).toMatch('let _temp0, _temp1, _temp2')
+  })
+
+  test('hoists', () => {
+    const root = createRoot({
+      hoists: [
+        createSimpleExpression(`hello`, false, locStub),
+        createObjectExpression(
+          [
+            createObjectProperty(
+              createSimpleExpression(`id`, true, locStub),
+              createSimpleExpression(`foo`, true, locStub),
+            ),
+          ],
+          locStub,
+        ),
+      ],
+    })
+    const { code } = generate(root)
+    expect(code).toMatch(`const _hoisted_1 = hello`)
+    expect(code).toMatch(`const _hoisted_2 = { id: "foo" }`)
+    expect(code).toMatchSnapshot()
+  })
 
   test('temps', () => {
     const root = createRoot({
@@ -122,5 +171,96 @@ describe('compiler: codegen', () => {
 
     expect(code).toMatch(`return "hello"`)
     expect(code).toMatchSnapshot()
+  })
+
+  test('interpolation', () => {
+    const { code } = generate(
+      createRoot({
+        codegenNode: createInterpolation('hello', locStub),
+      }),
+    )
+
+    expect(code).toMatch(`return _${helperNameMap[TO_DISPLAY_STRING]}(hello)`)
+  })
+
+  test('comment', () => {
+    const { code } = generate(
+      createRoot({
+        codegenNode: {
+          type: NodeTypes.COMMENT,
+          content: 'foo',
+          loc: locStub,
+        },
+      }),
+    )
+
+    expect(code).toMatch(`return _${helperNameMap[CREATE_COMMENT]}("foo")`)
+  })
+
+  test('compound expression', () => {
+    const { code } = generate(
+      createRoot({
+        codegenNode: createCompoundExpression(
+          [
+            '_ctx.',
+            createSimpleExpression('foo', false, locStub),
+            ' + ',
+            {
+              type: NodeTypes.INTERPOLATION,
+              loc: locStub,
+              content: createSimpleExpression('bar', false, locStub),
+            },
+            createCompoundExpression([' + ', 'nested']),
+          ],
+          locStub,
+        ),
+      }),
+    )
+
+    expect(code).toMatch(
+      `return _ctx.foo + _${helperNameMap[TO_DISPLAY_STRING]}(bar) + nested`,
+    )
+  })
+
+  test('ifNode', () => {
+    const { code } = generate(
+      createRoot({
+        codegenNode: {
+          type: NodeTypes.IF,
+          loc: locStub,
+          // branches: [],
+          codegenNode: createConditionalExpression(
+            createSimpleExpression('foo', false),
+            createSimpleExpression('bar', false),
+            createSimpleExpression('baz', false),
+          ),
+        },
+      }),
+    )
+
+    expect(code).toMatch(/return foo\s+\? bar\s+: baz/)
+  })
+
+  test('forNode', () => {
+    const { code } = generate(
+      createRoot({
+        codegenNode: {
+          type: NodeTypes.FOR,
+          loc: locStub,
+          source: createSimpleExpression('foo', false),
+          valueAlias: undefined,
+          keyAlias: undefined,
+          codegenNode: {
+            type: NodeTypes.VNODE_CALL,
+            tag: FRAGMENT,
+            isBlock: true,
+            disableTracking: true,
+            children: createCallExpression(RENDER_LIST),
+          },
+        },
+      }),
+    )
+
+    expect(code).toMatch(`openBlock(true)`)
   })
 })

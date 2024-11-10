@@ -13,6 +13,13 @@ return function render(_ctx, _cache) {
 return }"
 `;
 
+exports[`compiler: codegen > hoists 1`] = `
+"const _hoisted_1 = hello
+const _hoisted_2 = { id: "foo" }
+return function render(_ctx, _cache) {with (_ctx)
+return }"
+`;
+
 exports[`compiler: codegen > mode preamble 1`] = `
 "import { createVNode as _createVNode, resolveDirective as _resolveDirective } from "vue"
 function render(_ctx, _cache) {
