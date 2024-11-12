@@ -40,8 +40,6 @@ export function transform(
   root: RootNode,
   options: TransformOptions = {},
 ): void {
-  console.log('options', options.nodeTransforms)
-
   const context = createTransformContext(root, options)
 
   traverseNode(root, context)

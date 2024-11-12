@@ -6,6 +6,7 @@ export const CREATE_COMMENT: unique symbol = Symbol('createCommentVNode')
 export const FRAGMENT: unique symbol = Symbol('Fragment')
 export const RENDER_LIST: unique symbol = Symbol('renderList')
 export const OPEN_BLOCK: unique symbol = Symbol('openBlock')
+export const CREATE_ELEMENT_VNODE: unique symbol = Symbol('createElementVNode')
 
 export const helperNameMap = {
   [CREATE_VNODE]: 'createVNode',
@@ -16,4 +17,5 @@ export const helperNameMap = {
   [FRAGMENT]: 'Fragment',
   [RENDER_LIST]: 'renderList',
   [OPEN_BLOCK]: 'openBlock',
+  [CREATE_ELEMENT_VNODE]: 'createElementVNode',
 }

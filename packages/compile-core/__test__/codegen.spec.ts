@@ -22,7 +22,10 @@ import {
   RESOLVE_COMPONENT,
   RESOLVE_DIRECTIVE,
   TO_DISPLAY_STRING,
+  CREATE_ELEMENT_VNODE,
 } from '../src/runtimeHelpers'
+import { createElementWithCodegen, genFlagText } from './testUtils'
+import { PatchFlags } from '../../shared'
 
 function createRoot(options: Partial<RootNode> = {}): RootNode {
   return {
@@ -262,5 +265,56 @@ describe('compiler: codegen', () => {
     )
 
     expect(code).toMatch(`openBlock(true)`)
+  })
+
+  test('Element (callExpression + objectExpression + TemplateChildNode[])', () => {
+    const { code } = generate(
+      createRoot({
+        codegenNode: createElementWithCodegen(
+          `"div"`,
+          createObjectExpression(
+            [
+              createObjectProperty(
+                createSimpleExpression('id', true, locStub),
+                createSimpleExpression('foo', true, locStub),
+              ),
+              createObjectProperty(
+                createSimpleExpression(`prop`, false, locStub),
+                createSimpleExpression(`bar`, false, locStub),
+              ),
+            ],
+            locStub,
+          ),
+          [
+            createElementWithCodegen(
+              `"p"`,
+              createObjectExpression(
+                [
+                  createObjectProperty(
+                    // should quote the key!
+                    createSimpleExpression(`some-key`, true, locStub),
+                    createSimpleExpression(`foo`, true, locStub),
+                  ),
+                ],
+                locStub,
+              ),
+            ),
+          ],
+          PatchFlags.FULL_PROPS,
+        ),
+      }),
+    )
+
+    expect(code).toMatch(
+      `
+    return _${helperNameMap[CREATE_ELEMENT_VNODE]}("div", {
+      id: "foo",
+      [prop]: bar
+    }, [
+      _${helperNameMap[CREATE_ELEMENT_VNODE]}("p", { "some-key": "foo" })
+    ], ${genFlagText(PatchFlags.FULL_PROPS)})`,
+    )
+
+    expect(code).toMatchSnapshot()
   })
 })

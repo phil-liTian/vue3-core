@@ -1,15 +1,17 @@
-import { isString } from '../../shared'
+import { isArray, isString, PatchFlagNames } from '../../shared'
 import {
   CallExpression,
   CommentNode,
   CompoundExpressionNode,
   ConditionalExpression,
   ExpressionNode,
+  getVNodeHelper,
   InterpolationNode,
   NodeTypes,
   ObjectExpression,
   RootNode,
   SimpleExpressionNode,
+  TemplateChildNode,
   VNodeCall,
 } from './ast'
 import { CodegenOptions } from './options'
@@ -115,10 +117,11 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
   const args = ['_ctx', '_cache']
   const signarture = args.join(', ')
   push(`function ${functionName}(${signarture}) {`)
+  indent()
 
   if (useWithBlock) {
-    push(`with (_ctx)`)
-    // indent()
+    push(`with (_ctx) {`)
+    indent()
 
     if (hasHelper) {
       push(`const { ${helpers.map(aliasHelper).join(', ')} } = _Vue\n`)
@@ -148,7 +151,7 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
     }
   }
 
-  push('\n')
+  // push('\n')
   push(`return `)
 
   // 如何生成的codegenNode??? transform??
@@ -156,11 +159,12 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
     genNode(ast.codegenNode, context)
   }
 
-  // if ( useWithBlock ) {
-  //   deindent()
-  //   push('}')
-  // }
+  if (useWithBlock) {
+    deindent()
+    push('}')
+  }
 
+  deindent()
   push(`}`)
 
   return {
@@ -322,12 +326,14 @@ function genExpression(node: SimpleExpressionNode, context: CodegenContext) {
 // 处理js对象
 function genObjectExpression(node: ObjectExpression, context: CodegenContext) {
   const { properties } = node
-  const { push, newline } = context
+  const { push, newline, indent, deindent } = context
   if (!properties.length) {
     return
   }
+  const multilines = properties.length > 1
 
-  push('{ ')
+  push(multilines ? '{' : '{ ')
+  multilines && indent()
 
   for (let i = 0; i < properties.length; i++) {
     const { key, value } = properties[i]
@@ -338,11 +344,12 @@ function genObjectExpression(node: ObjectExpression, context: CodegenContext) {
     genNode(value, context)
     // 同样的 如果不是第一个 就换行展示
     if (i < properties.length - 1) {
+      push(',')
       newline()
     }
   }
-
-  push(' }')
+  multilines && deindent()
+  push(multilines ? '}' : ' }')
 }
 
 // 处理插值
@@ -397,15 +404,85 @@ function genConditionalExpression(
 }
 
 function genVNodeCall(node: VNodeCall, context: CodegenContext) {
-  const { isBlock, disableTracking } = node
+  const {
+    isBlock,
+    disableTracking,
+    tag,
+    props,
+    children,
+    dynamicProps,
+    patchFlag,
+  } = node
   const { push, helper } = context
   if (isBlock) {
     push(`(${helper(OPEN_BLOCK)}(${disableTracking ? `true` : ''})`)
   }
+  let patchFlagString
+
+  if (patchFlag) {
+    if (__DEV__) {
+      patchFlagString = patchFlag + ` /* ${PatchFlagNames[patchFlag]} */`
+    } else {
+      patchFlagString = String(patchFlag)
+    }
+  }
+
+  const callHelper: symbol = getVNodeHelper()
+
+  push(helper(callHelper) + '(', NewlineType.None)
+  genNodeList(
+    genNullableArgs([tag, props, children, patchFlagString, dynamicProps]),
+    context,
+  )
+  push(')')
+}
+
+// 接收一个任意类型的数组，从后往前找到第一个不为null的元素，然后返回一个新的数组，这个新数组包含原始数组中从开头到这个不为null的元素及其前面的所有元素，并且将其中的null值替换为字符串'null'
+
+function genNullableArgs(args: any[]): CallExpression['arguments'] {
+  let i = args.length
+  while (i--) {
+    if (args[i] != null) break
+  }
+
+  return args.slice(0, i + 1).map(arg => arg || 'null')
 }
 
 function genCallExpression(node: CallExpression, context: CodegenContext) {
   const { push, helper } = context
+}
+
+function genNodeList(nodes, context: CodegenContext, multilines?: boolean) {
+  const { push } = context
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]
+
+    if (isString(node)) {
+      push(node, NewlineType.Unknown)
+    } else if (isArray(node)) {
+      genNodeListAsArray(node, context)
+    } else {
+      genNode(node, context)
+    }
+
+    if (i < nodes.length - 1) {
+      push(', ')
+    }
+  }
+}
+
+function genNodeListAsArray(
+  nodes: TemplateChildNode[],
+  context: CodegenContext,
+) {
+  const multilines = nodes.length > 3 || nodes.some(n => !isText(n))
+  const { push, newline, helper, indent, deindent } = context
+  push('[')
+  multilines && indent()
+  genNodeList(nodes, context, multilines)
+  multilines && deindent()
+  push(']')
 }
 
 // ---------------------------- utils -------------------------------
@@ -421,5 +498,11 @@ function genExpressionAsPropertyKey(
       : JSON.stringify(node.content)
 
     push(text)
+  } else {
+    push(`[${node.content}]`)
   }
+}
+
+function isText(n: string) {
+  return isString(n)
 }

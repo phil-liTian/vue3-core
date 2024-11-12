@@ -1,4 +1,5 @@
-import { isString } from '../../shared'
+import { isString, PatchFlags } from '../../shared'
+import { CREATE_ELEMENT_VNODE } from './runtimeHelpers'
 
 // ------------------------------types------------------------------------------
 export enum NameSpaces {
@@ -31,6 +32,8 @@ export enum NodeTypes {
 export enum ElementTypes {
   ELEMENT,
 }
+
+export type propsExpression = ObjectExpression
 
 export type ElementNode = any
 
@@ -156,11 +159,17 @@ export interface ForParseResult {
 }
 
 export interface VNodeCall extends Node {
+  tag: string | symbol | CallExpression
+  props: propsExpression | undefined
+  children: TemplateChildNode[]
   type: NodeTypes.VNODE_CALL
+
+  dynamicProps: undefined | string
 
   isBlock: boolean
   isComponent: boolean
   disableTracking: boolean
+  patchFlag: undefined | PatchFlags
 }
 
 export interface Property extends Node {
@@ -290,4 +299,8 @@ export function createCallExpression<T extends CallExpression['callee']>(
     arguments: args,
     loc,
   }
+}
+
+export function getVNodeHelper() {
+  return CREATE_ELEMENT_VNODE
 }
