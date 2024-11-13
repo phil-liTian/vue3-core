@@ -1,3 +1,10 @@
+import {
+  InterpolationNode,
+  NodeTypes,
+  TemplateChildNode,
+  TextNode,
+} from './ast'
+
 export function isValidAssetId(
   name: string,
   type: 'component' | 'directive',
@@ -12,3 +19,9 @@ export function isValidAssetId(
 const nonIdentifierRE = /^\d|[^\$\w\xA0-\uFFFF]/
 export const isSimpleIdentifier = (name: string): boolean =>
   !nonIdentifierRE.test(name)
+
+export function isText(
+  node: TemplateChildNode,
+): node is TextNode | InterpolationNode {
+  return node.type === NodeTypes.TEXT || node.type === NodeTypes.INTERPOLATION
+}

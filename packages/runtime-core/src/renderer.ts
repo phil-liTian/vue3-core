@@ -195,7 +195,8 @@ function baseCreateRenderer(options: RendererOptions) {
           invokeArrayFns(bm)
         }
 
-        let subTree = instance.render!.call(instance.proxy)
+        let subTree = instance.render!.call(instance.proxy, instance.proxy!)
+
         // 当render函数直接返回一个字符串如何处理？？
         if (isString(subTree)) {
           subTree = h('div', null, subTree)
@@ -219,7 +220,9 @@ function baseCreateRenderer(options: RendererOptions) {
         }
 
         const prevTree = instance.subTree || null
-        const subTree = instance.render!.call(instance.proxy)
+
+        const subTree = instance.render!.call(instance.proxy, instance.proxy!)
+        console.log('subTree', subTree)
 
         patch(prevTree, subTree, container, anchor, instance)
         instance.subTree = subTree

@@ -18,3 +18,8 @@ export { renderSlots } from './helpers/renderSlots'
 
 // 内建组件
 export { Teleport } from './components/Teleport'
+
+// 在compiler-core里面用到的方法
+export { toDisplayString } from '@vue/shared'
+
+export { createElementVNode } from './vnode'

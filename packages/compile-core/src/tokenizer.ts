@@ -264,15 +264,16 @@ export default class Tokenizer {
 
   private stateAfterClosingTagName(c: number) {
     if (c === CharCodes.Gt) {
-      console.log(this.index + 1)
       // this.state = State.Text
       // this.sectionStart = this.index + 1
     }
   }
 
   private cleanup(): void {
-    if (this.state === State.Text) {
-      this.cbs.ontext(this.sectionStart, this.index)
+    if (this.sectionStart !== this.index) {
+      if (this.state === State.Text) {
+        this.cbs.ontext(this.sectionStart, this.index)
+      }
     }
   }
 }

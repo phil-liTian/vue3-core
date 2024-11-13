@@ -208,6 +208,7 @@ function genFunctionPreamble(ast: RootNode, context) {
   const {} = ast
 
   const helper = Array.from(ast.helpers! || new Set())
+
   if (helper.length) {
     if (prefixIdentifiers) {
       // 将导入语句放到整个函数块之前
@@ -265,7 +266,7 @@ function genHoist(hoist, context) {
 }
 
 // 处理node的核心入口函数
-function genNode(node: any, context) {
+export function genNode(node: any, context) {
   switch (node.type) {
     case NodeTypes.ELEMENT:
     case NodeTypes.IF:
@@ -313,6 +314,7 @@ function genNode(node: any, context) {
 // 处理纯文本
 function genText(node, context) {
   const { push } = context
+
   push(JSON.stringify(node.content))
 }
 
@@ -320,6 +322,7 @@ function genText(node, context) {
 function genExpression(node: SimpleExpressionNode, context: CodegenContext) {
   const { push } = context
   const { isStatic, content } = node
+
   push(isStatic ? JSON.stringify(content) : content)
 }
 
@@ -357,6 +360,7 @@ function genInterpolation(node: InterpolationNode, context: CodegenContext) {
   const { content } = node
   const { push, helper } = context
   push(`${helper(TO_DISPLAY_STRING)}(`)
+
   genNode(content, context)
   push(')')
 }
@@ -373,8 +377,10 @@ function genCompoundExpression(
   context: CodegenContext,
 ) {
   const { push } = context
+
   for (let i = 0; i < node.children.length; i++) {
     const child = node.children[i]
+
     if (isString(child)) {
       push(child as string)
     } else {
@@ -457,7 +463,6 @@ function genNodeList(nodes, context: CodegenContext, multilines?: boolean) {
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
-
     if (isString(node)) {
       push(node, NewlineType.Unknown)
     } else if (isArray(node)) {

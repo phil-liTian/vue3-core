@@ -33,6 +33,7 @@ export function nextTick<T = void, R = void>(
 // 相同flags的job, id越小越靠前
 export function queueJob(job: SchedulerJob) {
   // 排除入队的是相同job的情况
+
   if (!(job.flags! & SchedulerJobFlags.QUEUED)) {
     const jobId = getId(job)
     const lastJob = queue[queue.length - 1]

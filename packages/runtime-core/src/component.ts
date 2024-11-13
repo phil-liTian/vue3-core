@@ -15,7 +15,7 @@ export type Data = Record<string, unknown>
 
 export type VNodeChildren = any
 export interface InternalRenderFunction {
-  (): VNodeChildren
+  (ctx: ComponentPublicInstance): VNodeChildren
 }
 
 export interface ComponentInternalInstance {

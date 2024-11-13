@@ -25,7 +25,12 @@ export function isVNode(value: any): value is VNode {
   return value ? value.__v_isVNode : false
 }
 
-function createBaseVNode(type, props, children, shapeFlag): VNode {
+function createBaseVNode(
+  type,
+  props: Data | null = null,
+  children: unknown = null,
+  shapeFlag = 0,
+): VNode {
   if (!type) {
     if (__DEV__) {
       warn('Invalid vnode type when creating vnode:', type)
@@ -50,6 +55,8 @@ function createBaseVNode(type, props, children, shapeFlag): VNode {
 
   return vnode
 }
+
+export { createVNode as createElementVNode }
 
 export const createVNode = _createVNode as typeof _createVNode
 

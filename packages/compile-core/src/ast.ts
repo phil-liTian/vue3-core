@@ -52,15 +52,16 @@ export interface Position {
   column: number
 }
 
-export interface Node {
-  loc: SourceLocation
-  type: NodeTypes
-}
-
 export interface SourceLocation {
   start: Position
   end: Position
   source: string
+}
+
+// -------------------------Node Types-------------------------------------------------
+export interface Node {
+  loc: SourceLocation
+  type: NodeTypes
 }
 
 export interface TextNode extends Node {
@@ -117,16 +118,6 @@ export interface CommentNode extends Node {
   content: string
 }
 
-export interface CompoundExpressionNode extends Node {
-  type: NodeTypes.COMPOUND_EXPRESSION
-  children: (
-    | CompoundExpressionNode
-    | string
-    | InterpolationNode
-    | SimpleExpressionNode
-  )[]
-}
-
 export interface ConditionalExpression extends Node {
   type: NodeTypes.JS_CONDITIONAL_EXPRESSION
   test: JSChildNode
@@ -161,7 +152,7 @@ export interface ForParseResult {
 export interface VNodeCall extends Node {
   tag: string | symbol | CallExpression
   props: propsExpression | undefined
-  children: TemplateChildNode[]
+  children: TemplateChildNode[] | string | undefined
   type: NodeTypes.VNODE_CALL
 
   dynamicProps: undefined | string
@@ -170,6 +161,18 @@ export interface VNodeCall extends Node {
   isComponent: boolean
   disableTracking: boolean
   patchFlag: undefined | PatchFlags
+}
+
+export interface CompoundExpressionNode extends Node {
+  type: NodeTypes.COMPOUND_EXPRESSION
+
+  children: (
+    | TextNode
+    | InterpolationNode
+    | SimpleExpressionNode
+    | CompoundExpressionNode
+    | string
+  )[]
 }
 
 export interface Property extends Node {
@@ -259,6 +262,7 @@ export function createInterpolation(
   }
 }
 
+// 创建一个复合类型 及 element 内 既有text又有interpolation的表达式 会组成一个复合类型
 export function createCompoundExpression(
   children: CompoundExpressionNode['children'],
   loc: SourceLocation = locStub,
@@ -298,6 +302,21 @@ export function createCallExpression<T extends CallExpression['callee']>(
     callee,
     arguments: args,
     loc,
+  }
+}
+
+// 创建vnode
+export function createVNodeCall(
+  context,
+  tag: VNodeCall['tag'],
+  props: VNodeCall['props'],
+  children: VNodeCall['children'],
+) {
+  return {
+    type: NodeTypes.VNODE_CALL,
+    props,
+    tag,
+    children,
   }
 }
 

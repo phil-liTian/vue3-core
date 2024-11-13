@@ -1,5 +1,6 @@
 import { NodeTypes, RootNode, TemplateChildNode } from './ast'
 import { TransformOptions } from './options'
+import { TO_DISPLAY_STRING } from './runtimeHelpers'
 
 // transform上下文
 export interface TransformContext {
@@ -9,10 +10,14 @@ export interface TransformContext {
   parent: null | ParentNode
   // 当前节点
   currentNode: null | RootNode
+
+  helpers: Map<symbol, number>
+
+  helper<T extends symbol>(key: T): T
 }
 
 export type NodeTransform = (
-  node: RootNode,
+  node: RootNode | TemplateChildNode,
   context: TransformContext,
 ) => void | (() => void)
 
@@ -25,12 +30,14 @@ export function createTransformContext(
     nodeTransforms,
     parent: null,
     currentNode: root,
-  }
+    helpers: new Map(),
 
-  // root.codegenNode = {
-  //   type: NodeTypes.TEXT,
-  //   content: root.source,
-  // }
+    helper(name) {
+      const count = context.helpers.get(name) || 0
+      context.helpers.set(name, count + 1)
+      return name
+    },
+  }
 
   return context
 }
@@ -41,10 +48,11 @@ export function transform(
   options: TransformOptions = {},
 ): void {
   const context = createTransformContext(root, options)
-
   traverseNode(root, context)
 
   createRootCodegen(root, context)
+
+  root.helpers = new Set([...context.helpers.keys()])
 }
 
 export function traverseNode(
@@ -54,7 +62,7 @@ export function traverseNode(
   // 一定要在transform执行前, 赋值currentNode
   context.currentNode = node
 
-  const { nodeTransforms } = context
+  const { nodeTransforms, helper } = context
 
   let exitFns: any[] = []
   for (let i = 0; i < nodeTransforms.length; i++) {
@@ -66,9 +74,13 @@ export function traverseNode(
   }
 
   switch (node.type) {
-    case NodeTypes.ELEMENT: {
+    case NodeTypes.INTERPOLATION: {
+      helper(TO_DISPLAY_STRING)
+      break
     }
 
+    // 注意： 这里如果是element也需要遍历
+    case NodeTypes.ELEMENT:
     case NodeTypes.ROOT: {
       traverseChildren(node, context)
       break
@@ -76,6 +88,7 @@ export function traverseNode(
   }
 
   let i = exitFns.length
+
   while (i--) {
     exitFns[i]()
   }
