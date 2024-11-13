@@ -317,4 +317,6 @@ describe('compiler: codegen', () => {
 
     expect(code).toMatchSnapshot()
   })
+
+  test('forNode with constant expression', () => {})
 })

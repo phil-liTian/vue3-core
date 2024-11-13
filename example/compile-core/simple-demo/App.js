@@ -9,7 +9,7 @@ export const App = {
   setup() {
     const count = window.count = ref(1)
     return {
-      message: '正在开启compiler魔盒',
+      message: 'compiler',
       count
     }
   },

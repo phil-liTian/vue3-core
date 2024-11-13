@@ -2,6 +2,7 @@ import { isString } from '../../../shared'
 import { createSimpleExpression, NodeTypes } from '../ast'
 import { TransformContext } from '../transform'
 
+// 处理InterpolationNode
 export function transformExpression(node, context) {
   return () => {
     if (node.type === NodeTypes.INTERPOLATION) {

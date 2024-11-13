@@ -177,7 +177,7 @@ export interface CompoundExpressionNode extends Node {
 
 export interface Property extends Node {
   type: NodeTypes.JS_PROPERTY
-  key: JSChildNode
+  key: ExpressionNode
   value: JSChildNode
 }
 

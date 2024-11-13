@@ -6,6 +6,7 @@ import {
 import { NodeTransform } from '../transform'
 import { isText } from '../utils'
 
+// 将 TextNode 和 InterpolationNode合并成一个复合节点 CompoundExpressionNode
 export const transformText: NodeTransform = (node, context) => {
   return () => {
     if (node.type === NodeTypes.ELEMENT || node.type === NodeTypes.ROOT) {

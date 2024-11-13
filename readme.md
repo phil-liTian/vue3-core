@@ -121,6 +121,7 @@ export class Link {
 2. transform: 将一个模板ast转换成一个javascript ast方便generate函数处理。（实现解耦节点的访问和操作，设计了插件化架构）
   使用createTransformContext创建ast上下文, 对其children进行循环递归遍历处理。需要注意的是 在前端领域往往需要根据子节点的情况来决定当前节点如何转换。即要求父节点的转换操作需要其所有自节点全部转换后才进行。
   此处采用的解决办法是: 使用exitFns存下遍历时的NodeTransform函数, 遍历结束后再反向执行exitFns中的函数。
+  2.1 element中存在的相邻的Text和Interpolation节点，需要合并成一个CompoundExpressionNode类型的节点。
 
 3. generate: 与transform的实现思路类似，创建一个全局的上下文对象, 然后对这个对象进行操作
   返回的code就是一个拼接好的render函数. 执行后就会生成一个virtual dom, 经过patch会生成真实dom挂载到父节点上
