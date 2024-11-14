@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@vue/shared": "workspace:*"
+    "@vue/shared": "workspace:*",
+    "@vue/runtime-core": "workspace:*"
   }
 }

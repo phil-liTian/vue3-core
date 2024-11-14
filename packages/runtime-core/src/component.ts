@@ -8,6 +8,7 @@ import {
 import { VNode } from './vnode'
 import { LifecycleHooks } from './enums'
 import { SchedulerJob } from './scheduler'
+import { AppContext, createAppContext } from './apiCreateApp'
 
 export type LifecycleHook<TFn = Function> = (SchedulerJob[] & TFn) | null
 
@@ -22,6 +23,7 @@ export interface ComponentInternalInstance {
   vnode: VNode
   type: Component
   provides: Data
+  appContext: AppContext
   parent: ComponentInternalInstance | null
 
   component: any
@@ -47,14 +49,21 @@ export interface ComponentInternalInstance {
 
 export type Component = {}
 
+const exptyAppContext = createAppContext()
+
 // 添加parent 需要用到父级组件中提供的数据, provide/inject
 export function createComponentInstance(vnode, parent) {
+
+  const appContext = parent ? parent.appContext : vnode.appContext || exptyAppContext
+  
+
   const instance: ComponentInternalInstance = {
     vnode,
+    appContext,
     type: vnode.type,
     setupState: {},
     props: {},
-    provides: parent ? parent.provides : {},
+    provides: parent ? parent.provides : Object.create(appContext.provides),
     parent,
     component: null,
     slots: {},

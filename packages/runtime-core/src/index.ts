@@ -4,6 +4,8 @@ export const version: string = __VERSION__
 
 export * from './h'
 
+export type { Plugin, App, FunctionPlugin, ObjectPlugin } from './apiCreateApp'
+
 export { getCurrentInstance, registerRuntimeCompiler } from './component'
 
 export { onBeforeMount } from './apiLifecycle'

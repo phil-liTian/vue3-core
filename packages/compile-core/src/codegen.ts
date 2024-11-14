@@ -154,7 +154,7 @@ export function generate(ast: RootNode, options: CodegenOptions = {}) {
   // push('\n')
   push(`return `)
 
-  // 如何生成的codegenNode??? transform??
+  // transform生成的codegenNode
   if (ast.codegenNode) {
     genNode(ast.codegenNode, context)
   }
@@ -409,6 +409,7 @@ function genConditionalExpression(
   genNode(alternate, context)
 }
 
+// 处理vnode
 function genVNodeCall(node: VNodeCall, context: CodegenContext) {
   const {
     isBlock,
@@ -444,7 +445,6 @@ function genVNodeCall(node: VNodeCall, context: CodegenContext) {
 }
 
 // 接收一个任意类型的数组，从后往前找到第一个不为null的元素，然后返回一个新的数组，这个新数组包含原始数组中从开头到这个不为null的元素及其前面的所有元素，并且将其中的null值替换为字符串'null'
-
 function genNullableArgs(args: any[]): CallExpression['arguments'] {
   let i = args.length
   while (i--) {

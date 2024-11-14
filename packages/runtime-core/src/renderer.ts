@@ -222,7 +222,6 @@ function baseCreateRenderer(options: RendererOptions) {
         const prevTree = instance.subTree || null
 
         const subTree = instance.render!.call(instance.proxy, instance.proxy!)
-        console.log('subTree', subTree)
 
         patch(prevTree, subTree, container, anchor, instance)
         instance.subTree = subTree

@@ -2,6 +2,7 @@ import { isObject, isString, ShapeFlags } from '@vue/shared'
 import { Component, ComponentInternalInstance, Data } from './component'
 import { warn } from '@vue/reactivity/src/warning'
 import { RenderElement, RenderNode } from './renderer'
+import { AppContext } from './apiCreateApp'
 export type VNodeTypes = string | Component
 
 export type VNodeNormalizedChildren = string
@@ -19,6 +20,7 @@ export interface VNode<HostNode = RenderNode, HostElement = RenderElement> {
   key: null | PropertyKey
   el: HostNode | null
   component: ComponentInternalInstance | null
+  appContext: AppContext | null
 }
 
 export function isVNode(value: any): value is VNode {
@@ -44,6 +46,7 @@ function createBaseVNode(
     children,
     shapeFlag,
     key: props?.key,
+    appContext: null
   } as VNode
 
   if (children) {

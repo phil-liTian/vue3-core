@@ -1,3 +1,4 @@
+import { currentApp } from './apiCreateApp'
 import { currentInstance } from './component'
 
 interface InjectionConstraint<T> {}
@@ -27,9 +28,19 @@ export function provide<T, K = InjectionKey<T> | string | number>(
   provides[key as string] = value
 }
 
-export function inject(key, defaultValue) {
-  const instance = currentInstance
-  const provides = (instance && instance.parent?.provides) || {}
+export function inject(key, defaultValue = '') {
+  // const instance = currentApp ? currentApp._context : currentInstance
+  // const provides = (instance && instance.parent?.provides) || {}
 
-  return provides[key]
+  const instance = currentInstance
+
+  const provides = currentApp
+    ? currentApp._context.provides
+    : instance
+      ? instance.parent === null
+        ? instance.vnode.appContext?.provides
+        : instance.parent?.provides || {}
+      : {}
+
+  return provides![key]
 }
