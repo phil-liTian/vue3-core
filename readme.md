@@ -104,6 +104,9 @@ export class Link {
 8. apiLifecycle: 生命周期函数
   8.1 onBeforeMount: 在patch之前执行，需要注意的是可以注册多个onBeforeMount函数，使用invokeArrayFns来依次执行。
   8.2 onMounted: 在patch之后执行
+9. app.use 注册插件, 参数可以是含install的对象或者函数, 函数也可含install方法。 install方法的第一个参数是app, 其他参数可以自定义
+10. app.provide 提供全局的数据.借助apiInject.将根组件的provides指向app._context的provides.
+11. app.runWithContext 使用当前应用作为注入上下文执行回调函数
 ```
 
 

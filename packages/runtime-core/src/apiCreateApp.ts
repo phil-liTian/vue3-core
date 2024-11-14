@@ -77,6 +77,7 @@ export function createAppAPI(render) {
       _context: context,
       version,
 
+      // 提供全局共享数据
       provide(key, value) {
         context.provides[key as string | symbol] = value
         return app
@@ -93,6 +94,7 @@ export function createAppAPI(render) {
         }
       },
 
+      // 注册插件
       use(plugin: Plugin, ...options: any[]) {
         if (installedPlugins.has(plugin)) {
           __DEV__ && warn(`Plugin has already been applied to target app.`)
