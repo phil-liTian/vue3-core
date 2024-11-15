@@ -104,12 +104,14 @@ export class Link {
 8. apiLifecycle: 生命周期函数
   8.1 onBeforeMount: 在patch之前执行，需要注意的是可以注册多个onBeforeMount函数，使用invokeArrayFns来依次执行。
   8.2 onMounted: 在patch之后执行
-9. app.use 注册插件, 参数可以是含install的对象或者函数, 函数也可含install方法。 install方法的第一个参数是app, 其他参数可以自定义
-10. app.provide 提供全局的数据.借助apiInject.将根组件的provides指向app._context的provides.
-11. app.runWithContext 使用当前应用作为注入上下文执行回调函数
-12. app.component 注册全局组件。这里涉及到一个渲染函数resolveComponent: 会按name手动解析已注册的组件。vue在解析当前组件中使用到的子组件的时候，先匹配当前组件中componets选项中的组件是，没有的话会匹配app.component上注册的全局组件。
-13. app.errorHandler 全局错误处理, 全局使用handleError,在catch到错误时，会调用app.config.errorHandler，如果没有配置, 则直接使用console.error抛出错误。
-14. app.warnHandler 全局警告处理. 与handlerError类似，当用户的使用不满足vue3的预期的时候, vue会响应的抛出警告。这个警告只在测试环境抛出。使用pushWarningContext收集当前上下文, 警告抛出后使用popWarningContext收集到上下文抛出。
+
+9. 应用实例API
+  9.1 app.use 注册插件, 参数可以是含install的对象或者函数, 函数也可含install方法。 install方法的第一个参数是app, 其他参数可以自定义
+  9.2 app.provide 提供全局的数据.借助apiInject.将根组件的provides指向app._context的provides.
+  9.3 app.runWithContext 使用当前应用作为注入上下文执行回调函数
+  9.4 app.component 注册全局组件。这里涉及到一个渲染函数resolveComponent: 会按name手动解析已注册的组件。vue在解析当前组件中使用到的子组件的时候，先匹配当前组件中componets选项中的组件是，没有的话会匹配app.component上注册的全局组件。
+  9.5 app.errorHandler 全局错误处理, 全局使用handleError,在catch到错误时，会调用app.config.errorHandler，如果没有配置, 则直接使用console.error抛出错误。
+  9.6 app.warnHandler 全局警告处理. 与handlerError类似，当用户的使用不满足vue3的预期的时候, vue会响应的抛出警告。这个警告只在测试环境抛出。使用pushWarningContext收集当前上下文, 警告抛出后使用popWarningContext收集到上下文抛出。
 ```
 
 
