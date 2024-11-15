@@ -54,3 +54,13 @@ export const invokeArrayFns = (fns: Function[], ...args: any[]) => {
     fns[i](...args)
   }
 }
+
+// 将中划线转化成驼峰命名
+export const camelize = (str: string): string => {
+  return str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ''))
+}
+
+// 首字母转化成大写
+export const capitalize = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}

@@ -16,6 +16,8 @@ import { createVNode, isSameVNodeType, VNode } from './vnode'
 import { queueJob } from './scheduler'
 import { createAppAPI } from './apiCreateApp'
 import { h } from './h'
+import { ErrorCodes, handleError } from './errorHandling'
+import { popWarningContext, pushWarningContext } from './warning'
 
 export interface RenderNode {
   [key: string | symbol]: any
@@ -171,14 +173,30 @@ function baseCreateRenderer(options: RendererOptions) {
       parentComponent,
     ))
 
+    if (__DEV__) {
+      pushWarningContext(vnode)
+    }
+
     setupComponent(instance)
     setupRenderEffect(instance, instance.vnode, container, anchor)
+
+    if (__DEV__) {
+      popWarningContext()
+    }
   }
 
   function updateComponent(n1: VNode, n2: VNode) {
     const instance = (n2.component = n1.component)
     instance!.update()
     instance!.next = n2
+
+    if (__DEV__) {
+      pushWarningContext(n2)
+    }
+    // TODO
+    if (__DEV__) {
+      popWarningContext()
+    }
   }
 
   function setupRenderEffect(
@@ -187,51 +205,57 @@ function baseCreateRenderer(options: RendererOptions) {
     container: RenderElement,
     anchor: RenderNode | null,
   ) {
-    const componentUpdateFn = () => {
-      if (!instance.isMounted) {
-        const { bm, m } = instance
-        if (bm) {
-          // 在组件渲染成真实dom之前执行, 即patch之前执行
-          invokeArrayFns(bm)
+    try {
+      const componentUpdateFn = () => {
+        if (!instance.isMounted) {
+          const { bm, m } = instance
+          if (bm) {
+            // 在组件渲染成真实dom之前执行, 即patch之前执行
+            invokeArrayFns(bm)
+          }
+
+          let subTree = instance.render!.call(instance.proxy, instance.proxy!)
+
+          // 当render函数直接返回一个字符串如何处理？？
+          if (isString(subTree)) {
+            subTree = h('div', null, subTree)
+          }
+
+          patch(null, subTree, container, anchor, instance)
+
+          if (m) {
+            // TODO 这里需要注意的是: mounted需要在scheduler运行结束之后执行
+          }
+
+          instance.isMounted = true
+          instance.subTree = subTree
+        } else {
+          const { next, vnode } = instance
+
+          // 组件更新逻辑
+          if (next) {
+            next.el = vnode.el
+            updateComponentPreRender(instance, next)
+          }
+
+          const prevTree = instance.subTree || null
+
+          const subTree = instance.render!.call(instance.proxy, instance.proxy!)
+
+          patch(prevTree, subTree, container, anchor, instance)
+          instance.subTree = subTree
+          initialVNode.el = subTree.el
         }
-
-        let subTree = instance.render!.call(instance.proxy, instance.proxy!)
-
-        // 当render函数直接返回一个字符串如何处理？？
-        if (isString(subTree)) {
-          subTree = h('div', null, subTree)
-        }
-
-        patch(null, subTree, container, anchor, instance)
-
-        if (m) {
-          // TODO 这里需要注意的是: mounted需要在scheduler运行结束之后执行
-        }
-
-        instance.isMounted = true
-        instance.subTree = subTree
-      } else {
-        const { next, vnode } = instance
-
-        // 组件更新逻辑
-        if (next) {
-          next.el = vnode.el
-          updateComponentPreRender(instance, next)
-        }
-
-        const prevTree = instance.subTree || null
-
-        const subTree = instance.render!.call(instance.proxy, instance.proxy!)
-
-        patch(prevTree, subTree, container, anchor, instance)
-        instance.subTree = subTree
-        initialVNode.el = subTree.el
       }
-    }
 
-    instance.update = effect(componentUpdateFn, {
-      scheduler: () => queueJob(instance.update),
-    })
+      instance.update = effect(componentUpdateFn, {
+        scheduler: () => queueJob(instance.update),
+      })
+    } catch (err) {
+      // throw err
+      // console.log('error', err)
+      handleError(err, instance, ErrorCodes.RENDER_FUNCTION)
+    }
   }
 
   function updateComponentPreRender(instance, nextVNode) {

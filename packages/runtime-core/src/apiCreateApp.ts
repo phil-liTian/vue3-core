@@ -1,9 +1,10 @@
 // import { render } from './renderer'
 import { warn } from './warning'
-import { version } from '.'
+import { Component, version } from '.'
 import { InjectionKey } from './apiInject'
 import { createVNode } from './vnode'
-import { isFunction } from '@vue/shared'
+import { extend, isFunction } from '@vue/shared'
+import { ComponentPublicInstance } from './componentPublicInstance'
 
 // export function createApp(rootComponent) {
 //   return {
@@ -21,6 +22,8 @@ export interface App<HostElement = any> {
   _context: AppContext
 
   version: string
+  config: AppConfig
+
   mount: (rootContainer: HostElement) => void
   provide<T, K = InjectionKey<T>>(
     key: K,
@@ -29,6 +32,9 @@ export interface App<HostElement = any> {
 
   runWithContext<T>(fn: () => T): T
 
+  component(name: string): Component | undefined
+  component<T extends Component>(name: string, component: T): this
+
   use<Option extends unknown[]>(
     plugin: Plugin<Option>,
     ...options: Option
@@ -36,9 +42,28 @@ export interface App<HostElement = any> {
   use<Option>(plugin: Plugin<Option>, options: Option): this
 }
 
+export interface AppConfig {
+  globalProperties: Record<string, any>
+
+  errorHandler?: (
+    error: unknown,
+    instance: ComponentPublicInstance | null,
+    info: string,
+  ) => void
+
+  warnHandler?: (
+    error: string,
+    instance: ComponentPublicInstance | null,
+    info: string,
+  ) => void
+}
+
 export interface AppContext {
   app: App
   provides: Record<string | symbol, any>
+  config: AppConfig
+  components: Record<string, Component>
+  directives: Record<string, any>
 }
 
 type PluginInstallFunction<Options = any[]> = Options extends unknown[]
@@ -63,6 +88,15 @@ export function createAppContext(): AppContext {
   return {
     app: null as any,
     provides: Object.create(null),
+    // 全局注册组件
+    components: {},
+    // 全局注册指令
+    directives: {},
+    config: {
+      errorHandler: undefined,
+      warnHandler: undefined,
+      globalProperties: {}
+    },
   }
 }
 
@@ -72,10 +106,14 @@ export function createAppAPI(render) {
     const installedPlugins = new WeakSet()
 
     const app: App = (context.app = {
+      version,
       _uid: uid++,
       _component: rooterComponent,
       _context: context,
-      version,
+
+      get config() {
+        return context.config
+      },
 
       // 提供全局共享数据
       provide(key, value) {
@@ -109,6 +147,14 @@ export function createAppAPI(render) {
         }
 
         return app // 可链式调用
+      },
+
+      component(name: string, component?: Component): any {
+        if ( !component ) {
+          return context.components[name]
+        }
+        context.components[name] = component
+        return app
       },
 
       mount(rootContainer) {

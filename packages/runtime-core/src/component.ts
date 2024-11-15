@@ -9,6 +9,7 @@ import { VNode } from './vnode'
 import { LifecycleHooks } from './enums'
 import { SchedulerJob } from './scheduler'
 import { AppContext, createAppContext } from './apiCreateApp'
+import { warn } from './warning'
 
 export type LifecycleHook<TFn = Function> = (SchedulerJob[] & TFn) | null
 
@@ -27,6 +28,8 @@ export interface ComponentInternalInstance {
   parent: ComponentInternalInstance | null
 
   component: any
+
+  components: Record<string, ConcreteComponent> | null
 
   render: InternalRenderFunction | null
   subTree: VNode | null
@@ -47,15 +50,23 @@ export interface ComponentInternalInstance {
   [LifecycleHooks.MOUNTED]: LifecycleHook
 }
 
+export interface ComponentOptionsBase {
+  name?: string
+}
+
+export type ComponentOptions = ComponentOptionsBase
+
+export type ConcreteComponent = ComponentOptions
+
 export type Component = {}
 
 const exptyAppContext = createAppContext()
 
 // 添加parent 需要用到父级组件中提供的数据, provide/inject
 export function createComponentInstance(vnode, parent) {
-
-  const appContext = parent ? parent.appContext : vnode.appContext || exptyAppContext
-  
+  const appContext = parent
+    ? parent.appContext
+    : vnode.appContext || exptyAppContext
 
   const instance: ComponentInternalInstance = {
     vnode,
@@ -75,6 +86,8 @@ export function createComponentInstance(vnode, parent) {
     update: null!,
 
     isMounted: false,
+
+    components: null,
 
     // api hooks
     bm: null,
@@ -112,6 +125,8 @@ function handleSetupResult(instance: any, setupResult: any) {
     instance.setupState = proxyRefs(setupResult)
   } else if (typeof setupResult === 'function') {
     // TODO： setup的返回值可以是一个函数, 如果是一个函数则认为是render函数, 默认会忽略自定义的render函数
+  } else {
+    warn(`setup() should return an object`)
   }
 
   finishComponentSetup(instance)
@@ -135,6 +150,10 @@ export let currentInstance: ComponentInternalInstance | null = null
 export const getCurrentInstance = () => currentInstance
 
 export const setCurrentInstance = instance => (currentInstance = instance)
+
+export function getComponentName(component: ConcreteComponent) {
+  return component.name
+}
 
 /**
  * compiler

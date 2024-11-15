@@ -6,7 +6,15 @@ export * from './h'
 
 export type { Plugin, App, FunctionPlugin, ObjectPlugin } from './apiCreateApp'
 
-export { getCurrentInstance, registerRuntimeCompiler } from './component'
+export {
+  type ComponentInternalInstance,
+  type Component,
+  getCurrentInstance,
+  registerRuntimeCompiler,
+  getComponentName,
+} from './component'
+
+export { resolveComponent } from './helpers/resolveAssets'
 
 export { onBeforeMount } from './apiLifecycle'
 
